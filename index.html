@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mis Apuntes de Ingeniería</title>
     
+    <!-- Icono para la pestaña (Soluciona el error favicon.ico) -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎓</text></svg>">
+    
     <!-- React y ReactDOM -->
     <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
@@ -138,8 +141,6 @@
         // ==========================================
         //  2. TUS DOCUMENTOS (CONFIGURACIÓN)
         // ==========================================
-        // IMPORTANTE: Asegúrate de que los archivos PDF tengan estos nombres EXACTOS
-        // y estén en la misma carpeta que este archivo index.html
         
         const MIS_DOCUMENTOS = [
             // --- Semestre I ---
@@ -191,7 +192,10 @@
             { id: 'doc-par', subjectId: 'paradigmas', title: 'Apuntes de Paradigmas', pdfUrl: './Paradigmas.pdf' },
             { id: 'doc-pro2', subjectId: 'proba', title: 'Apuntes de Probabilidad', pdfUrl: './Probabilidad.pdf' },
             { id: 'doc-con1', subjectId: 'control1', title: 'Apuntes de Control I', pdfUrl: './Control_I.pdf' },
-            { id: 'doc-len', subjectId: 'lenguajes', title: 'Apuntes de Lenguajes Formales', pdfUrl: './notas_lfya.pdf' }, // Archivo específico solicitado
+            
+            // ARCHIVO DE LENGUAJES - RUTA LOCAL
+            { id: 'doc-len', subjectId: 'lenguajes', title: 'Apuntes de Lenguajes Formales', pdfUrl: './notas_lfya.pdf' }, 
+            
             { id: 'doc-lpa', subjectId: 'lab-paradigmas', title: 'Manual Lab. Paradigmas', pdfUrl: './Lab_Paradigmas.pdf' },
             { id: 'doc-lco1', subjectId: 'lab-control1', title: 'Manual Lab. Control I', pdfUrl: './Lab_Control_I.pdf' },
 
