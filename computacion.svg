@@ -1,610 +1,1490 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Plan de Estudios Interactivo - Ingeniería en Computación</title>
-    <style>
-        :root {
-            --bg-color: #1a1a1a;
-            --text-color: #e0e0e0;
-            --node-bg: #2d2d2d;
-            --highlight-prereq: #ff4d4d; /* Rojo para lo de atrás */
-            --highlight-postreq: #00e676; /* Verde para lo de adelante */
-            --highlight-selected: #2979ff; /* Azul para el seleccionado */
-            --edge-dim: #444;
-            --font-main: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-        }
-
-        body, html {
-            margin: 0;
-            padding: 0;
-            width: 100%;
-            height: 100%;
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            font-family: var(--font-main);
-            overflow: hidden;
-        }
-
-        /* UI Controls */
-        .ui-overlay {
-            position: absolute;
-            top: 20px;
-            left: 20px;
-            z-index: 100;
-            background: rgba(45, 45, 45, 0.9);
-            padding: 15px;
-            border-radius: 8px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
-            backdrop-filter: blur(5px);
-            border: 1px solid #444;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            width: 300px;
-        }
-
-        h1 {
-            font-size: 1.1rem;
-            margin: 0 0 5px 0;
-            color: #fff;
-        }
-
-        .legend {
-            font-size: 0.8rem;
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-        }
-        .legend-item {
-            display: flex;
-            align-items: center;
-            gap: 5px;
-        }
-        .dot { width: 10px; height: 10px; border-radius: 50%; }
-        
-        .search-box {
-            padding: 8px;
-            border-radius: 4px;
-            border: 1px solid #555;
-            background: #222;
-            color: white;
-            width: 100%;
-            box-sizing: border-box;
-        }
-
-        .controls {
-            position: absolute;
-            bottom: 20px;
-            right: 20px;
-            display: flex;
-            gap: 10px;
-            z-index: 100;
-        }
-
-        button {
-            background: #333;
-            color: white;
-            border: 1px solid #555;
-            padding: 10px 15px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-weight: bold;
-            transition: background 0.2s;
-        }
-        button:hover { background: #444; }
-
-        /* SVG Styling */
-        #graph-container {
-            width: 100%;
-            height: 100%;
-            cursor: grab;
-        }
-        #graph-container:active {
-            cursor: grabbing;
-        }
-
-        svg {
-            width: 100%;
-            height: 100%;
-        }
-
-        /* Graph Elements Styling */
-        g.node polygon {
-            fill: var(--node-bg);
-            stroke: #555;
-            stroke-width: 2px;
-            transition: all 0.3s ease;
-        }
-        
-        /* Semesters headers */
-        g.node[id^="node1"], g.node[id^="node2"], g.node[id^="node3"], 
-        g.node[id^="node4"], g.node[id^="node5"], g.node[id^="node6"], 
-        g.node[id^="node7"], g.node[id^="node8"], g.node[id^="node9"], g.node[id^="node10"] {
-             pointer-events: none;
-        }
-        /* Specifically target Roman Numerals I, II, III etc logic approximations based on ID */
-        g.node title:contains("I"), g.node title:contains("II"), g.node title:contains("III") {
-             pointer-events: none;
-        }
-
-        g.node text {
-            font-family: var(--font-main) !important;
-            fill: #ccc !important;
-            pointer-events: none; /* Let clicks pass through text to the polygon */
-        }
-        
-        g.node:hover polygon {
-            fill: #3d3d3d;
-            stroke: #fff;
-            cursor: pointer;
-        }
-
-        g.edge path {
-            stroke: var(--edge-dim);
-            stroke-width: 1px;
-            transition: all 0.3s ease;
-        }
-        
-        g.edge polygon {
-            fill: var(--edge-dim);
-            stroke: var(--edge-dim);
-            transition: all 0.3s ease;
-        }
-
-        /* Dynamic Classes for Interaction */
-        .is-selected polygon {
-            stroke: var(--highlight-selected) !important;
-            stroke-width: 4px !important;
-            fill: #1a237e !important;
-        }
-        
-        .is-prereq polygon {
-            stroke: var(--highlight-prereq) !important;
-            stroke-width: 3px !important;
-            fill: #3e1a1a !important; /* Dark Red tint */
-        }
-        
-        .is-postreq polygon {
-            stroke: var(--highlight-postreq) !important;
-            stroke-width: 3px !important;
-            fill: #1b3e20 !important; /* Dark Green tint */
-        }
-
-        .edge-active path {
-            stroke: #fff !important;
-            stroke-width: 2px !important;
-            stroke-opacity: 1 !important;
-        }
-        .edge-active polygon {
-            fill: #fff !important;
-            stroke: #fff !important;
-        }
-
-        .faded {
-            opacity: 0.2;
-        }
-        
-        /* Category Coloring based on original stroke colors */
-        /* Basic Science (Red stroke in original) */
-        g.node[data-category="red"] polygon { border-bottom: 3px solid #ff5252; }
-        g.node[data-category="red"] text:first-of-type { fill: #ff8a80 !important; font-weight: bold; }
-        
-        /* Computing (Green stroke in original) */
-        g.node[data-category="green"] polygon { }
-        g.node[data-category="green"] text:first-of-type { fill: #69f0ae !important; font-weight: bold; }
-
-        /* Social/English (Blue stroke) */
-        g.node[data-category="blue"] polygon { }
-        g.node[data-category="blue"] text:first-of-type { fill: #448aff !important; font-weight: bold; }
-
-        /* Applied/IA (Orange stroke) */
-        g.node[data-category="orange"] polygon { }
-        g.node[data-category="orange"] text:first-of-type { fill: #ffd180 !important; font-weight: bold; }
-        
-        /* Others (Brown) */
-        g.node[data-category="brown"] polygon { }
-        g.node[data-category="brown"] text:first-of-type { fill: #bcaaa4 !important; font-weight: bold; }
-
-    </style>
-</head>
-<body>
-
-    <div class="ui-overlay">
-        <h1>Mapa Curricular Interactivo</h1>
-        <input type="text" id="search" class="search-box" placeholder="Buscar materia (ej. Cálculo, Bases de Datos)...">
-        <div class="legend">
-            <div class="legend-item"><div class="dot" style="background:var(--highlight-selected)"></div> Seleccionada</div>
-            <div class="legend-item"><div class="dot" style="background:var(--highlight-prereq)"></div> Requisito</div>
-            <div class="legend-item"><div class="dot" style="background:var(--highlight-postreq)"></div> Abre</div>
-        </div>
-        <div style="font-size: 0.75rem; color: #888; margin-top: 5px;">
-            Click para seleccionar. Arrastra para mover. Scroll para zoom.
-        </div>
-    </div>
-
-    <div class="controls">
-        <button onclick="resetZoom()">Centrar Mapa</button>
-    </div>
-
-    <div id="graph-container">
-        <!-- Raw SVG Injected Below with modifications for width/height -->
-        <svg id="main-svg" preserveAspectRatio="xMidYMid meet" viewBox="0.00 0.00 2446 1470" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
-            <g id="viewport" transform="scale(1 1) translate(0 0)">
-                <!-- BACKGROUND -->
-                <polygon fill="transparent" stroke="transparent" points="-4,4 -4,-1470.8462 2446,-1470.8462 2446,4 -4,4"/>
-                
-                <!-- TITLE REMOVED (Handled by HTML Overlay) -->
-                
-                <!-- SEMESTER MARKERS (I, II, III...) - Adjusted coordinates to positive for easier handling manually if needed, but keeping original mostly -->
-                <g id="node1" class="node"><title>I</title><polygon fill="transparent" stroke="none" points="54,-1401 0,-1401 0,-1315 54,-1315 54,-1401"/><text text-anchor="middle" x="27" y="-1353" font-size="30.00" font-weight="bold" fill="#fff">I</text></g>
-                <g id="node2" class="node"><title>II</title><polygon fill="transparent" stroke="none" points="54,-1255 0,-1255 0,-1169 54,-1169 54,-1255"/><text text-anchor="middle" x="27" y="-1207" font-size="30.00" font-weight="bold" fill="#fff">II</text></g>
-                <g id="node3" class="node"><title>III</title><polygon fill="transparent" stroke="none" points="54,-1110 0,-1110 0,-1024 54,-1024 54,-1110"/><text text-anchor="middle" x="27" y="-1062" font-size="30.00" font-weight="bold" fill="#fff">III</text></g>
-                <g id="node4" class="node"><title>IV</title><polygon fill="transparent" stroke="none" points="54,-965 0,-965 0,-879 54,-879 54,-965"/><text text-anchor="middle" x="27" y="-917" font-size="30.00" font-weight="bold" fill="#fff">IV</text></g>
-                <g id="node5" class="node"><title>V</title><polygon fill="transparent" stroke="none" points="54,-820 0,-820 0,-734 54,-734 54,-820"/><text text-anchor="middle" x="27" y="-772" font-size="30.00" font-weight="bold" fill="#fff">V</text></g>
-                <g id="node6" class="node"><title>VI</title><polygon fill="transparent" stroke="none" points="54,-675 0,-675 0,-589 54,-589 54,-675"/><text text-anchor="middle" x="27" y="-627" font-size="30.00" font-weight="bold" fill="#fff">VI</text></g>
-                <g id="node7" class="node"><title>VII</title><polygon fill="transparent" stroke="none" points="54,-530 0,-530 0,-444 54,-444 54,-530"/><text text-anchor="middle" x="27" y="-482" font-size="30.00" font-weight="bold" fill="#fff">VII</text></g>
-                <g id="node8" class="node"><title>VIII</title><polygon fill="transparent" stroke="none" points="54,-385 0,-385 0,-299 54,-299 54,-385"/><text text-anchor="middle" x="27" y="-337" font-size="30.00" font-weight="bold" fill="#fff">VIII</text></g>
-                <g id="node9" class="node"><title>IX</title><polygon fill="transparent" stroke="none" points="54,-239 0,-239 0,-153 54,-153 54,-239"/><text text-anchor="middle" x="27" y="-191" font-size="30.00" font-weight="bold" fill="#fff">IX</text></g>
-                <g id="node10" class="node"><title>X</title><polygon fill="transparent" stroke="none" points="54,-94 0,-94 0,-8 54,-8 54,-94"/><text text-anchor="middle" x="27" y="-46" font-size="30.00" font-weight="bold" fill="#fff">X</text></g>
-
-                <!-- NODES (Courses) -->
-                <!-- Red: Basic Sciences -->
-                <g id="node11" class="node course" data-stroke="#ff0000"><title>CB0100L</title><polygon points="152.5,-1315 152.5,-1401 255.5,-1401 255.5,-1315 152.5,-1315"/><text text-anchor="middle" x="192.5" y="-1379.8" font-size="14.00">CB0100-L</text><polyline points="152.5,-1366 232.5,-1366"/><text text-anchor="middle" x="192.5" y="-1344.3" font-size="14.00">Laboratorio</text><text text-anchor="middle" x="192.5" y="-1329.3" font-size="14.00">de Física I</text></g>
-                <g id="node12" class="node course" data-stroke="#ff0000"><title>CB0500L</title><polygon points="391.5,-1315 391.5,-1401 494.5,-1401 494.5,-1315 391.5,-1315"/><text text-anchor="middle" x="431.5" y="-1379.8" font-size="14.00">CB0500-L</text><polyline points="391.5,-1366 471.5,-1366"/><text text-anchor="middle" x="431.5" y="-1344.3" font-size="14.00">Laboratorio</text><text text-anchor="middle" x="431.5" y="-1329.3" font-size="14.00">de Química</text></g>
-                <g id="node13" class="node course" data-stroke="#ff0000"><title>CB0200T</title><polygon points="571.5,-1315 571.5,-1401 704.5,-1401 704.5,-1315 571.5,-1315"/><text text-anchor="middle" x="626.5" y="-1375.8" font-size="14.00">CB0200-T</text><polyline points="571.5,-1358 681.5,-1358"/><text text-anchor="middle" x="626.5" y="-1332.8" font-size="14.00">Álgebra Superior</text></g>
-                <g id="node14" class="node course" data-stroke="#ff0000"><title>CB0000T</title><polygon points="948,-1315 948,-1401 1052,-1401 1052,-1315 948,-1315"/><text text-anchor="middle" x="985" y="-1375.8" font-size="14.00">CB0000-T</text><polyline points="948,-1358 1022,-1358"/><text text-anchor="middle" x="985" y="-1332.8" font-size="14.00">Cálculo I</text></g>
-                <g id="node15" class="node course" data-stroke="#ff0000"><title>CB0100T</title><polygon points="828.5,-1315 828.5,-1401 929.5,-1401 929.5,-1315 828.5,-1315"/><text text-anchor="middle" x="866.5" y="-1375.8" font-size="14.00">CB0100-T</text><polyline points="828.5,-1358 904.5,-1358"/><text text-anchor="middle" x="866.5" y="-1332.8" font-size="14.00">Física I</text></g>
-                <g id="node18" class="node course" data-stroke="#ff0000"><title>CB0500T</title><polygon points="1070.5,-1315 1070.5,-1401 1171.5,-1401 1171.5,-1315 1070.5,-1315"/><text text-anchor="middle" x="1108.5" y="-1375.8" font-size="14.00">CB0500-T</text><polyline points="1070.5,-1358 1146.5,-1358"/><text text-anchor="middle" x="1108.5" y="-1332.8" font-size="14.00">Química</text></g>
-                <g id="node20" class="node course" data-stroke="#ff0000"><title>CB0001T</title><polygon points="302,-1169 302,-1255 406,-1255 406,-1169 302,-1169"/><text text-anchor="middle" x="339" y="-1229.8" font-size="14.00">CB0001-T</text><polyline points="302,-1212 376,-1212"/><text text-anchor="middle" x="339" y="-1186.8" font-size="14.00">Cálculo II</text></g>
-                <g id="node22" class="node course" data-stroke="#ff0000"><title>CB0101T</title><polygon points="872.5,-1169 872.5,-1255 973.5,-1255 973.5,-1169 872.5,-1169"/><text text-anchor="middle" x="910.5" y="-1229.8" font-size="14.00">CB0101-T</text><polyline points="872.5,-1212 948.5,-1212"/><text text-anchor="middle" x="910.5" y="-1186.8" font-size="14.00">Física II</text></g>
-                <g id="node25" class="node course" data-stroke="#ff0000"><title>CB0101L</title><polygon points="1997.5,-1169 1997.5,-1255 2100.5,-1255 2100.5,-1169 1997.5,-1169"/><text text-anchor="middle" x="2037.5" y="-1233.8" font-size="14.00">CB0101-L</text><polyline points="1997.5,-1220 2077.5,-1220"/><text text-anchor="middle" x="2037.5" y="-1198.3" font-size="14.00">Laboratorio</text><text text-anchor="middle" x="2037.5" y="-1183.3" font-size="14.00">de Física II</text></g>
-                <g id="node29" class="node course" data-stroke="#ff0000"><title>CB0002T</title><polygon points="340,-1024 340,-1110 446,-1110 446,-1024 340,-1024"/><text text-anchor="middle" x="378" y="-1084.8" font-size="14.00">CB0002-T</text><polyline points="340,-1067 416,-1067"/><text text-anchor="middle" x="378" y="-1041.8" font-size="14.00">Cálculo III</text></g>
-                <g id="node33" class="node course" data-stroke="#ff0000"><title>CB0102L</title><polygon points="1997.5,-1024 1997.5,-1110 2140.5,-1110 2140.5,-1024 1997.5,-1024"/><text text-anchor="middle" x="2057.5" y="-1092.3" font-size="14.00">CB0102-L</text><polyline points="1997.5,-1082 2117.5,-1082"/><text text-anchor="middle" x="2057.5" y="-1064.3" font-size="14.00">Laboratorio</text><text text-anchor="middle" x="2057.5" y="-1049.3" font-size="14.00">de Teoría EM</text></g>
-                <g id="node34" class="node course" data-stroke="#ff0000"><title>CB0501L</title><polygon points="2158.5,-1024 2158.5,-1110 2285.5,-1110 2285.5,-1024 2158.5,-1024"/><text text-anchor="middle" x="2210.5" y="-1092.3" font-size="14.00">CB0501-L</text><polyline points="2158.5,-1082 2262.5,-1082"/><text text-anchor="middle" x="2210.5" y="-1064.3" font-size="14.00">Laboratorio de</text><text text-anchor="middle" x="2210.5" y="-1034.3" font-size="14.00">Termodinámica</text></g>
-                <g id="node35" class="node course" data-stroke="#ff0000"><title>CB0300T</title><polygon points="866.5,-1024 866.5,-1110 967.5,-1110 967.5,-1024 866.5,-1024"/><text text-anchor="middle" x="905" y="-1088.8" font-size="14.00">CB0300-T</text><polyline points="866.5,-1075 943.5,-1075"/><text text-anchor="middle" x="905" y="-1053.3" font-size="14.00">Métodos</text><text text-anchor="middle" x="905" y="-1038.3" font-size="14.00">Numéricos</text></g>
-                <g id="node36" class="node course" data-stroke="#ff0000"><title>CB0102T</title><polygon points="666.5,-1024 666.5,-1110 809.5,-1110 809.5,-1024 666.5,-1024"/><text text-anchor="middle" x="726.5" y="-1088.8" font-size="14.00">CB0102-T</text><polyline points="666.5,-1075 786.5,-1075"/><text text-anchor="middle" x="726.5" y="-1053.3" font-size="14.00">Teoría</text><text text-anchor="middle" x="726.5" y="-1038.3" font-size="14.00">Electromagnética I</text></g>
-                <g id="node37" class="node course" data-stroke="#ff0000"><title>CB0501T</title><polygon points="985.5,-1024 985.5,-1110 1112.5,-1110 1112.5,-1024 985.5,-1024"/><text text-anchor="middle" x="1037.5" y="-1084.8" font-size="14.00">CB0501-T</text><polyline points="985.5,-1067 1089.5,-1067"/><text text-anchor="middle" x="1037.5" y="-1041.8" font-size="14.00">Termodinámica</text></g>
-                <g id="node38" class="node course" data-stroke="#ff0000"><title>CB0003T</title><polygon points="340.5,-879 340.5,-965 447.5,-965 447.5,-879 340.5,-879"/><text text-anchor="middle" x="379" y="-939.8" font-size="14.00">CB0003-T</text><polyline points="340.5,-922 417.5,-922"/><text text-anchor="middle" x="379" y="-896.8" font-size="14.00">Cálculo IV</text></g>
-                <g id="node46" class="node course" data-stroke="#ff0000"><title>CB7000T</title><polygon points="1016.5,-734 1016.5,-820 1137.5,-820 1137.5,-734 1016.5,-734"/><text text-anchor="middle" x="1065.5" y="-794.8" font-size="14.00">CB7000-T</text><polyline points="1016.5,-777 1114.5,-777"/><text text-anchor="middle" x="1065.5" y="-751.8" font-size="14.00">Álgebra Lineal</text></g>
-                <g id="node53" class="node course" data-stroke="#ff0000"><title>CB0600T</title><polygon points="175.5,-734 175.5,-820 284.5,-820 284.5,-734 175.5,-734"/><text text-anchor="middle" x="218.5" y="-798.8" font-size="14.00">CB0600-T</text><polyline points="175.5,-785 261.5,-785"/><text text-anchor="middle" x="218.5" y="-763.3" font-size="14.00">Probabilidad</text><text text-anchor="middle" x="218.5" y="-748.3" font-size="14.00">y Estadística</text></g>
-
-                <!-- Blue: Social / English / Tools -->
-                <g id="node16" class="node course" data-stroke="#0000ff"><title>CS0000T</title><polygon points="1741.5,-1315 1741.5,-1401 1842.5,-1401 1842.5,-1315 1741.5,-1315"/><text text-anchor="middle" x="1779" y="-1375.8" font-size="14.00">CS0000-T</text><polyline points="1741.5,-1358 1816.5,-1358"/><text text-anchor="middle" x="1779" y="-1332.8" font-size="14.00">Inglés I</text></g>
-                <g id="node17" class="node course" data-stroke="#a52a2a"><title>OC0000L</title><polygon points="1190,-1315 1190,-1401 1324,-1401 1324,-1315 1190,-1315"/><text text-anchor="middle" x="1245.5" y="-1383.3" font-size="14.00">OC0000-L</text><polyline points="1190,-1373 1301,-1373"/><text text-anchor="middle" x="1245.5" y="-1355.3" font-size="14.00">Lab. Herramientas</text><text text-anchor="middle" x="1245.5" y="-1325.3" font-size="14.00">Computacionales</text></g>
-                <g id="node19" class="node course" data-stroke="#a52a2a"><title>OC0100T</title><polygon points="1860.5,-1315 1860.5,-1401 1961.5,-1401 1961.5,-1315 1860.5,-1315"/><text text-anchor="middle" x="1898.5" y="-1379.8" font-size="14.00">OC0100-T</text><polyline points="1860.5,-1366 1936.5,-1366"/><text text-anchor="middle" x="1898.5" y="-1344.3" font-size="14.00">Técnicas</text><text text-anchor="middle" x="1898.5" y="-1329.3" font-size="14.00">de Estudio</text></g>
-                <g id="node23" class="node course" data-stroke="#0000ff"><title>CS0001T</title><polygon points="1741.5,-1169 1741.5,-1255 1842.5,-1255 1842.5,-1169 1741.5,-1169"/><text text-anchor="middle" x="1779" y="-1229.8" font-size="14.00">CS0001-T</text><polyline points="1741.5,-1212 1816.5,-1212"/><text text-anchor="middle" x="1779" y="-1186.8" font-size="14.00">Inglés II</text></g>
-                <g id="node31" class="node course" data-stroke="#0000ff"><title>CS0002T</title><polygon points="1741.5,-1024 1741.5,-1110 1842.5,-1110 1842.5,-1024 1741.5,-1024"/><text text-anchor="middle" x="1779" y="-1084.8" font-size="14.00">CS0002-T</text><polyline points="1741.5,-1067 1816.5,-1067"/><text text-anchor="middle" x="1779" y="-1041.8" font-size="14.00">Inglés III</text></g>
-                <g id="node43" class="node course" data-stroke="#0000ff"><title>CS0003T</title><polygon points="1741.5,-879 1741.5,-965 1842.5,-965 1842.5,-879 1741.5,-879"/><text text-anchor="middle" x="1779" y="-939.8" font-size="14.00">CS0003-T</text><polyline points="1741.5,-922 1816.5,-922"/><text text-anchor="middle" x="1779" y="-896.8" font-size="14.00">Inglés IV</text></g>
-                <g id="node57" class="node course" data-stroke="#a52a2a"><title>OC0300T</title><polygon points="1873.5,-589 1873.5,-675 1974.5,-675 1974.5,-589 1873.5,-589"/><text text-anchor="middle" x="1911.5" y="-649.8" font-size="14.00">OC0300-T</text><polyline points="1873.5,-632 1949.5,-632"/><text text-anchor="middle" x="1911.5" y="-606.8" font-size="14.00">Economía</text></g>
-                <g id="node69" class="node course" data-stroke="#a52a2a"><title>OC0400T</title><polygon points="1654,-299 1654,-385 1778,-385 1778,-299 1654,-299"/><text text-anchor="middle" x="1704.5" y="-359.8" font-size="14.00">OC0400-T</text><polyline points="1654,-342 1755,-342"/><text text-anchor="middle" x="1704.5" y="-316.8" font-size="14.00">Administración</text></g>
-                <g id="node71" class="node course" data-stroke="#0000ff"><title>CS0200T</title><polygon points="1796.5,-299 1796.5,-385 1897.5,-385 1897.5,-299 1796.5,-299"/><text text-anchor="middle" x="1835.5" y="-363.8" font-size="14.00">CS0200-T</text><polyline points="1796.5,-350 1874.5,-350"/><text text-anchor="middle" x="1835.5" y="-328.3" font-size="14.00">Ética</text><text text-anchor="middle" x="1835.5" y="-313.3" font-size="14.00">Profesional</text></g>
-                 <g id="node76" class="node course" data-stroke="#a52a2a"><title>OC0200T</title><polygon points="1615.5,-153 1615.5,-239 1724.5,-239 1724.5,-153 1615.5,-153"/><text text-anchor="middle" x="1658.5" y="-213.8" font-size="14.00">OC0200-T</text><polyline points="1615.5,-196 1701.5,-196"/><text text-anchor="middle" x="1658.5" y="-170.8" font-size="14.00">Contabilidad</text></g>
-                <g id="node77" class="node course" data-stroke="#0000ff"><title>CS0100T</title><polygon points="1742.5,-153 1742.5,-239 1843.5,-239 1843.5,-153 1742.5,-153"/><text text-anchor="middle" x="1780" y="-221.3" font-size="14.00">CS0100-T</text><polyline points="1742.5,-211 1817.5,-211"/><text text-anchor="middle" x="1780" y="-193.3" font-size="14.00">Expresión</text><text text-anchor="middle" x="1780" y="-163.3" font-size="14.00">Oral y Escrita</text></g>
-                <g id="node80" class="node course" data-stroke="#a52a2a"><title>OC0500T</title><polygon points="72.5,-8 72.5,-94 173.5,-94 173.5,-8 72.5,-8"/><text text-anchor="middle" x="110.5" y="-72.8" font-size="14.00">OC0500-T</text><polyline points="72.5,-59 148.5,-59"/><text text-anchor="middle" x="110.5" y="-37.3" font-size="14.00">Seminario</text><text text-anchor="middle" x="110.5" y="-22.3" font-size="14.00">de Tesis</text></g>
-
-                <!-- Green: Computing Core -->
-                <g id="node21" class="node course" data-stroke="#00ff00"><title>CI0100T</title><polygon points="506.5,-1169 506.5,-1255 609.5,-1255 609.5,-1169 506.5,-1169"/><text text-anchor="middle" x="546.5" y="-1233.8" font-size="14.00">CI0100-T</text><polyline points="506.5,-1220 586.5,-1220"/><text text-anchor="middle" x="546.5" y="-1198.3" font-size="14.00">Electrónica</text><text text-anchor="middle" x="546.5" y="-1183.3" font-size="14.00">Analógica I</text></g>
-                <g id="node24" class="node course" data-stroke="#00ff00"><title>CI0100L</title><polygon points="1861,-1169 1861,-1255 1979,-1255 1979,-1169 1861,-1169"/><text text-anchor="middle" x="1908.5" y="-1237.3" font-size="14.00">CI0100-L</text><polyline points="1861,-1227 1956,-1227"/><text text-anchor="middle" x="1908.5" y="-1209.3" font-size="14.00">Laboratorio</text><text text-anchor="middle" x="1908.5" y="-1179.3" font-size="14.00">Elec. Analógica I</text></g>
-                <g id="node26" class="node course" data-stroke="#00ff00"><title>CI0000L</title><polygon points="2119,-1169 2119,-1255 2255,-1255 2255,-1169 2119,-1169"/><text text-anchor="middle" x="2175.5" y="-1237.3" font-size="14.00">CI0000-L</text><polyline points="2119,-1227 2232,-1227"/><text text-anchor="middle" x="2175.5" y="-1209.3" font-size="14.00">Lab. Programación</text><text text-anchor="middle" x="2175.5" y="-1179.3" font-size="14.00">de Computadoras</text></g>
-                <g id="node28" class="node course" data-stroke="#00ff00"><title>CI0000T</title><polygon points="1187,-1169 1187,-1255 1323,-1255 1323,-1169 1187,-1169"/><text text-anchor="middle" x="1243.5" y="-1233.8" font-size="14.00">CI0000-T</text><polyline points="1187,-1220 1300,-1220"/><text text-anchor="middle" x="1243.5" y="-1198.3" font-size="14.00">Programación</text><text text-anchor="middle" x="1243.5" y="-1183.3" font-size="14.00">de Computadoras</text></g>
-                <g id="node30" class="node course" data-stroke="#00ff00"><title>CI0101T</title><polygon points="464,-1024 464,-1110 572,-1110 572,-1024 464,-1024"/><text text-anchor="middle" x="506.5" y="-1088.8" font-size="14.00">CI0101-T</text><polyline points="464,-1075 549,-1075"/><text text-anchor="middle" x="506.5" y="-1053.3" font-size="14.00">Electrónica</text><text text-anchor="middle" x="506.5" y="-1038.3" font-size="14.00">Analógica II</text></g>
-                <g id="node32" class="node course" data-stroke="#00ff00"><title>CI0101L</title><polygon points="1861,-1024 1861,-1110 1979,-1110 1979,-1024 1861,-1024"/><text text-anchor="middle" x="1908.5" y="-1092.3" font-size="14.00">CI0101-L</text><polyline points="1861,-1082 1956,-1082"/><text text-anchor="middle" x="1908.5" y="-1064.3" font-size="14.00">Laboratorio</text><text text-anchor="middle" x="1908.5" y="-1034.3" font-size="14.00">Elec. Analógica II</text></g>
-                <g id="node39" class="node course" data-stroke="#00ff00"><title>CI0200T</title><polygon points="613,-879 613,-965 715,-965 715,-879 613,-879"/><text text-anchor="middle" x="652.5" y="-943.8" font-size="14.00">CI0200-T</text><polyline points="613,-930 692,-930"/><text text-anchor="middle" x="652.5" y="-908.3" font-size="14.00">Circuitos</text><text text-anchor="middle" x="652.5" y="-893.3" font-size="14.00">Eléctricos I</text></g>
-                <g id="node40" class="node course" data-stroke="#00ff00"><title>CI0300T</title><polygon points="493.5,-879 493.5,-965 594.5,-965 594.5,-879 493.5,-879"/><text text-anchor="middle" x="532.5" y="-943.8" font-size="14.00">CI0300-T</text><polyline points="493.5,-930 571.5,-930"/><text text-anchor="middle" x="532.5" y="-908.3" font-size="14.00">Electrónica</text><text text-anchor="middle" x="532.5" y="-893.3" font-size="14.00">Digital I</text></g>
-                <g id="node41" class="node course" data-stroke="#00ff00"><title>CI7100T</title><polygon points="1283.5,-879 1283.5,-965 1384.5,-965 1384.5,-879 1283.5,-879"/><text text-anchor="middle" x="1322" y="-943.8" font-size="14.00">CI7100-T</text><polyline points="1283.5,-930 1360.5,-930"/><text text-anchor="middle" x="1322" y="-908.3" font-size="14.00">Estructuras</text><text text-anchor="middle" x="1322" y="-893.3" font-size="14.00">de Datos</text></g>
-                <g id="node42" class="node course" data-stroke="#00ff00"><title>CI7101T</title><polygon points="1403,-879 1403,-965 1519,-965 1519,-879 1403,-879"/><text text-anchor="middle" x="1449.5" y="-947.3" font-size="14.00">CI7101-T</text><polyline points="1403,-937 1496,-937"/><text text-anchor="middle" x="1449.5" y="-919.3" font-size="14.00">Ingeniería</text><text text-anchor="middle" x="1449.5" y="-889.3" font-size="14.00">de Programación</text></g>
-                <g id="node44" class="node course" data-stroke="#00ff00"><title>CI0300L</title><polygon points="1861,-879 1861,-965 1979,-965 1979,-879 1861,-879"/><text text-anchor="middle" x="1908.5" y="-947.3" font-size="14.00">CI0300-L</text><polyline points="1861,-937 1956,-937"/><text text-anchor="middle" x="1908.5" y="-919.3" font-size="14.00">Laboratorio</text><text text-anchor="middle" x="1908.5" y="-889.3" font-size="14.00">Elec. Digital I</text></g>
-                <g id="node45" class="node course" data-stroke="#00ff00"><title>CI7000T</title><polygon points="1613,-879 1613,-965 1723,-965 1723,-879 1613,-879"/><text text-anchor="middle" x="1656.5" y="-943.8" font-size="14.00">CI7000-T</text><polyline points="1613,-930 1700,-930"/><text text-anchor="middle" x="1656.5" y="-908.3" font-size="14.00">Matemáticas</text><text text-anchor="middle" x="1656.5" y="-893.3" font-size="14.00">Discretas</text></g>
-                <g id="node47" class="node course" data-stroke="#00ff00"><title>CI7102T</title><polygon points="1283,-734 1283,-820 1385,-820 1385,-734 1283,-734"/><text text-anchor="middle" x="1322.5" y="-802.3" font-size="14.00">CI7102-T</text><polyline points="1283,-792 1362,-792"/><text text-anchor="middle" x="1322.5" y="-774.3" font-size="14.00">Análisis</text><text text-anchor="middle" x="1322.5" y="-744.3" font-size="14.00">de Algoritmos</text></g>
-                <g id="node48" class="node course" data-stroke="#00ff00"><title>CI0400T</title><polygon points="342,-734 342,-820 446,-820 446,-734 342,-734"/><text text-anchor="middle" x="382.5" y="-798.8" font-size="14.00">CI0400-T</text><polyline points="342,-785 423,-785"/><text text-anchor="middle" x="382.5" y="-763.3" font-size="14.00">Control</text><text text-anchor="middle" x="382.5" y="-748.3" font-size="14.00">Analógico I</text></g>
-                <g id="node49" class="node course" data-stroke="#00ff00"><title>CI0400L</title><polygon points="1783.5,-734 1783.5,-820 1932.5,-820 1932.5,-734 1783.5,-734"/><text text-anchor="middle" x="1846.5" y="-802.3" font-size="14.00">CI0400-L</text><polyline points="1783.5,-792 1909.5,-792"/><text text-anchor="middle" x="1846.5" y="-774.3" font-size="14.00">Laboratorio</text><text text-anchor="middle" x="1846.5" y="-744.3" font-size="14.00">de Control Anál. I</text></g>
-                <g id="node51" class="node course" data-stroke="#00ff00"><title>CI7001T</title><polygon points="1656.5,-734 1656.5,-820 1765.5,-820 1765.5,-734 1656.5,-734"/><text text-anchor="middle" x="1699.5" y="-802.3" font-size="14.00">CI7001-T</text><polyline points="1656.5,-792 1742.5,-792"/><text text-anchor="middle" x="1699.5" y="-774.3" font-size="14.00">Lenguajes</text><text text-anchor="middle" x="1699.5" y="-744.3" font-size="14.00">Formales y Aut.</text></g>
-                <g id="node56" class="node course" data-stroke="#00ff00"><title>CI0401T</title><polygon points="175.5,-589 175.5,-675 284.5,-675 284.5,-589 175.5,-589"/><text text-anchor="middle" x="218.5" y="-653.8" font-size="14.00">CI0401-T</text><polyline points="175.5,-640 261.5,-640"/><text text-anchor="middle" x="218.5" y="-618.3" font-size="14.00">Control</text><text text-anchor="middle" x="218.5" y="-603.3" font-size="14.00">Analógico II</text></g>
-                <g id="node60" class="node course" data-stroke="#00ff00"><title>CI0401L</title><polygon points="2150,-589 2150,-675 2304,-675 2304,-589 2150,-589"/><text text-anchor="middle" x="2215.5" y="-657.3" font-size="14.00">CI0401-L</text><polyline points="2150,-647 2281,-647"/><text text-anchor="middle" x="2215.5" y="-629.3" font-size="14.00">Lab. Control</text><text text-anchor="middle" x="2215.5" y="-599.3" font-size="14.00">Analógico II</text></g>
-                <g id="node68" class="node course" data-stroke="#00ff00"><title>CI7002T</title><polygon points="1654.5,-444 1654.5,-530 1767.5,-530 1767.5,-444 1654.5,-444"/><text text-anchor="middle" x="1699.5" y="-512.3" font-size="14.00">CI7002-T</text><polyline points="1654.5,-502 1744.5,-502"/><text text-anchor="middle" x="1699.5" y="-484.3" font-size="14.00">Teoría de</text><text text-anchor="middle" x="1699.5" y="-454.3" font-size="14.00">la Computación</text></g>
-                <g id="node73" class="node course" data-stroke="#00ff00"><title>CI7200L</title><polygon points="2037,-299 2037,-385 2149,-385 2149,-299 2037,-299"/><text text-anchor="middle" x="2078" y="-367.3" font-size="14.00">CI7200-L</text><polyline points="2037,-357 2119,-357"/><text text-anchor="middle" x="2078" y="-339.3" font-size="14.00">Lab. Sistemas</text><text text-anchor="middle" x="2078" y="-309.3" font-size="14.00">Operativos</text></g>
-                <g id="node74" class="node course" data-stroke="#00ff00"><title>CI7300T</title><polygon points="72.5,-299 72.5,-385 181.5,-385 181.5,-299 72.5,-299"/><text text-anchor="middle" x="115.5" y="-363.8" font-size="14.00">CI7300-T</text><polyline points="72.5,-350 158.5,-350"/><text text-anchor="middle" x="115.5" y="-328.3" font-size="14.00">Modelos</text><text text-anchor="middle" x="115.5" y="-313.3" font-size="14.00">Probabilistas</text></g>
-                <g id="node75" class="node course" data-stroke="#00ff00"><title>CI7200T</title><polygon points="1016.5,-299 1016.5,-385 1117.5,-385 1117.5,-299 1016.5,-299"/><text text-anchor="middle" x="1055" y="-363.8" font-size="14.00">CI7200-T</text><polyline points="1016.5,-350 1093.5,-350"/><text text-anchor="middle" x="1055" y="-328.3" font-size="14.00">Sistemas</text><text text-anchor="middle" x="1055" y="-313.3" font-size="14.00">Operativos</text></g>
-
-
-                <!-- Orange: Applied Engineering / AI -->
-                <g id="node27" class="node course" data-stroke="#ffa500"><title>IA7000T</title><polygon points="1565.5,-1169 1565.5,-1255 1666.5,-1255 1666.5,-1169 1565.5,-1169"/><text text-anchor="middle" x="1602.5" y="-1229.8" font-size="14.00">IA7000-T</text><polyline points="1565.5,-1212 1639.5,-1212"/><text text-anchor="middle" x="1602.5" y="-1186.8" font-size="14.00">Lógica</text></g>
-                <g id="node50" class="node course" data-stroke="#ffa500"><title>IA7300L</title><polygon points="1950.5,-734 1950.5,-820 2083.5,-820 2083.5,-734 1950.5,-734"/><text text-anchor="middle" x="2005.5" y="-802.3" font-size="14.00">IA7300-L</text><polyline points="1950.5,-792 2060.5,-792"/><text text-anchor="middle" x="2005.5" y="-774.3" font-size="14.00">Lab. Paradigmas</text><text text-anchor="middle" x="2005.5" y="-744.3" font-size="14.00">de Programación</text></g>
-                <g id="node52" class="node course" data-stroke="#ffa500"><title>IA7300T</title><polygon points="1403,-734 1403,-820 1519,-820 1519,-734 1403,-734"/><text text-anchor="middle" x="1449.5" y="-802.3" font-size="14.00">IA7300-T</text><polyline points="1403,-792 1496,-792"/><text text-anchor="middle" x="1449.5" y="-774.3" font-size="14.00">Paradigmas</text><text text-anchor="middle" x="1449.5" y="-744.3" font-size="14.00">de Programación</text></g>
-                <g id="node54" class="node course" data-stroke="#ffa500"><title>IA7100T</title><polygon points="1739,-589 1739,-675 1855,-675 1855,-589 1739,-589"/><text text-anchor="middle" x="1785.5" y="-649.8" font-size="14.00">IA7100-T</text><polyline points="1739,-632 1832,-632"/><text text-anchor="middle" x="1785.5" y="-606.8" font-size="14.00">Compiladores</text></g>
-                <g id="node55" class="node course" data-stroke="#ffa500"><title>IA3100T</title><polygon points="404.5,-589 404.5,-675 543.5,-675 543.5,-589 404.5,-589"/><text text-anchor="middle" x="462.5" y="-649.8" font-size="14.00">IA3100-T</text><polyline points="404.5,-632 520.5,-632"/><text text-anchor="middle" x="462.5" y="-606.8" font-size="14.00">Comunicaciones I</text></g>
-                <g id="node58" class="node course" data-stroke="#ffa500"><title>IA7200T</title><polygon points="1056.5,-589 1056.5,-675 1159.5,-675 1159.5,-589 1056.5,-589"/><text text-anchor="middle" x="1096.5" y="-649.8" font-size="14.00">IA7200-T</text><polyline points="1056.5,-632 1136.5,-632"/><text text-anchor="middle" x="1096.5" y="-606.8" font-size="14.00">Graficación</text></g>
-                <g id="node59" class="node course" data-stroke="#ffa500"><title>IA3100L</title><polygon points="1992.5,-589 1992.5,-675 2131.5,-675 2131.5,-589 1992.5,-589"/><text text-anchor="middle" x="2050.5" y="-657.3" font-size="14.00">IA3100-L</text><polyline points="1992.5,-647 2108.5,-647"/><text text-anchor="middle" x="2050.5" y="-629.3" font-size="14.00">Lab. Comunicaciones I</text></g>
-                <g id="node61" class="node course" data-stroke="#ffa500"><title>IA7200L</title><polygon points="2322,-589 2322,-675 2442,-675 2442,-589 2322,-589"/><text text-anchor="middle" x="2370.5" y="-653.8" font-size="14.00">IA7200-L</text><polyline points="2322,-640 2419,-640"/><text text-anchor="middle" x="2370.5" y="-618.3" font-size="14.00">Laboratorio</text><text text-anchor="middle" x="2370.5" y="-603.3" font-size="14.00">de Graficación</text></g>
-                <g id="node62" class="node course" data-stroke="#ffa500"><title>IA7400T</title><polygon points="780.5,-589 780.5,-675 899.5,-675 899.5,-589 780.5,-589"/><text text-anchor="middle" x="828.5" y="-657.3" font-size="14.00">IA7400-T</text><polyline points="780.5,-647 876.5,-647"/><text text-anchor="middle" x="828.5" y="-629.3" font-size="14.00">Organización</text><text text-anchor="middle" x="828.5" y="-599.3" font-size="14.00">de Computadoras</text></g>
-                <g id="node63" class="node course" data-stroke="#ffa500"><title>IA7500T</title><polygon points="1496.5,-444 1496.5,-530 1597.5,-530 1597.5,-444 1496.5,-444"/><text text-anchor="middle" x="1533.5" y="-508.8" font-size="14.00">IA7500-T</text><polyline points="1496.5,-495 1570.5,-495"/><text text-anchor="middle" x="1533.5" y="-473.3" font-size="14.00">Bases</text><text text-anchor="middle" x="1533.5" y="-458.3" font-size="14.00">de Datos</text></g>
-                <g id="node64" class="node course" data-stroke="#ffa500"><title>IA7800T</title><polygon points="929,-444 929,-530 1041,-530 1041,-444 929,-444"/><text text-anchor="middle" x="973.5" y="-512.3" font-size="14.00">IA7800-T</text><polyline points="929,-502 1018,-502"/><text text-anchor="middle" x="973.5" y="-484.3" font-size="14.00">Investigación</text><text text-anchor="middle" x="973.5" y="-454.3" font-size="14.00">de Operaciones</text></g>
-                <g id="node65" class="node course" data-stroke="#ffa500"><title>IA7500L</title><polygon points="1785.5,-444 1785.5,-530 1888.5,-530 1888.5,-444 1785.5,-444"/><text text-anchor="middle" x="1825.5" y="-512.3" font-size="14.00">IA7500-L</text><polyline points="1785.5,-502 1865.5,-502"/><text text-anchor="middle" x="1825.5" y="-484.3" font-size="14.00">Lab. Bases</text><text text-anchor="middle" x="1825.5" y="-454.3" font-size="14.00">de Datos</text></g>
-                <g id="node66" class="node course" data-stroke="#ffa500"><title>IA7600L</title><polygon points="1907,-444 1907,-530 2043,-530 2043,-444 1907,-444"/><text text-anchor="middle" x="1963.5" y="-512.3" font-size="14.00">IA7600-L</text><polyline points="1907,-502 2020,-502"/><text text-anchor="middle" x="1963.5" y="-484.3" font-size="14.00">Laboratorio</text><text text-anchor="middle" x="1963.5" y="-454.3" font-size="14.00">de Redes</text></g>
-                <g id="node67" class="node course" data-stroke="#ffa500"><title>IA7600T</title><polygon points="1082,-444 1082,-530 1218,-530 1218,-444 1082,-444"/><text text-anchor="middle" x="1138.5" y="-508.8" font-size="14.00">IA7600-T</text><polyline points="1082,-495 1195,-495"/><text text-anchor="middle" x="1138.5" y="-473.3" font-size="14.00">Redes</text><text text-anchor="middle" x="1138.5" y="-458.3" font-size="14.00">de Computadoras</text></g>
-                <g id="node70" class="node course" data-stroke="#ffa500"><title>IA3400T</title><polygon points="199.5,-299 199.5,-385 300.5,-385 300.5,-299 199.5,-299"/><text text-anchor="middle" x="236.5" y="-363.8" font-size="14.00">IA3400-T</text><polyline points="199.5,-350 273.5,-350"/><text text-anchor="middle" x="236.5" y="-328.3" font-size="14.00">Control</text><text text-anchor="middle" x="236.5" y="-313.3" font-size="14.00">Digital I</text></g>
-                <g id="node72" class="node course" data-stroke="#ffa500"><title>IA3400L</title><polygon points="1915.5,-299 1915.5,-385 2018.5,-385 2018.5,-299 1915.5,-299"/><text text-anchor="middle" x="1955.5" y="-367.3" font-size="14.00">IA3400-L</text><polyline points="1915.5,-357 1995.5,-357"/><text text-anchor="middle" x="1955.5" y="-339.3" font-size="14.00">Lab. Control</text><text text-anchor="middle" x="1955.5" y="-309.3" font-size="14.00">Digital I</text></g>
-                <g id="node78" class="node course" data-stroke="#ffa500"><title>IA7700T</title><polygon points="1494.5,-153 1494.5,-239 1597.5,-239 1597.5,-153 1494.5,-153"/><text text-anchor="middle" x="1534.5" y="-217.8" font-size="14.00">IA7700-T</text><polyline points="1494.5,-204 1574.5,-204"/><text text-anchor="middle" x="1534.5" y="-182.3" font-size="14.00">Inteligencia</text><text text-anchor="middle" x="1534.5" y="-167.3" font-size="14.00">Artificial</text></g>
-                <g id="node79" class="node course" data-stroke="#ffa500"><title>IA7700L</title><polygon points="1862,-153 1862,-239 1982,-239 1982,-153 1862,-153"/><text text-anchor="middle" x="1910.5" y="-221.3" font-size="14.00">IA7700-L</text><polyline points="1862,-211 1959,-211"/><text text-anchor="middle" x="1910.5" y="-193.3" font-size="14.00">Laboratorio</text><text text-anchor="middle" x="1910.5" y="-163.3" font-size="14.00">de IA</text></g>
-
-                <!-- EDGES (Dependencies) -->
-                <!-- Raw Edges from graphviz, styling handled by CSS edge class -->
-                <g class="edge"><title>I-&gt;II</title><path d="M27,-1314.9848C27,-1296.1433 27,-1274.0762 27,-1255.2122"/><polygon points="27,-1255.2122 30.5,-1265.2122 27,-1260.2122 23.5,-1265.2123 27,-1255.2122"/></g>
-                <g class="edge"><title>II-&gt;III</title><path d="M27,-1168.8878C27,-1150.3551 27,-1128.7385 27,-1110.1965"/><polygon points="27,-1110.1965 30.5,-1120.1965 27,-1115.1965 23.5,-1120.1965 27,-1110.1965"/></g>
-                <g class="edge"><title>III-&gt;IV</title><path d="M27,-1023.8878C27,-1005.3551 27,-983.7385 27,-965.1965"/><polygon points="27,-965.1965 30.5,-975.1965 27,-970.1965 23.5,-975.1965 27,-965.1965"/></g>
-                <g class="edge"><title>IV-&gt;V</title><path d="M27,-878.8878C27,-860.3551 27,-838.7385 27,-820.1965"/><polygon points="27,-820.1965 30.5,-830.1965 27,-825.1965 23.5,-830.1965 27,-820.1965"/></g>
-                <g class="edge"><title>V-&gt;VI</title><path d="M27,-733.8878C27,-715.3551 27,-693.7385 27,-675.1965"/><polygon points="27,-675.1965 30.5,-685.1965 27,-680.1965 23.5,-685.1965 27,-675.1965"/></g>
-                <g class="edge"><title>VI-&gt;VII</title><path d="M27,-588.8878C27,-570.3551 27,-548.7385 27,-530.1965"/><polygon points="27,-530.1965 30.5,-540.1965 27,-535.1965 23.5,-540.1965 27,-530.1965"/></g>
-                <g class="edge"><title>VII-&gt;VIII</title><path d="M27,-443.8878C27,-425.3551 27,-403.7385 27,-385.1965"/><polygon points="27,-385.1965 30.5,-395.1965 27,-390.1965 23.5,-395.1965 27,-385.1965"/></g>
-                <g class="edge"><title>VIII-&gt;IX</title><path d="M27,-298.9848C27,-280.1433 27,-258.0762 27,-239.2122"/><polygon points="27,-239.2122 30.5,-249.2122 27,-244.2122 23.5,-249.2122 27,-239.2122"/></g>
-                <g class="edge"><title>IX-&gt;X</title><path d="M27,-152.8878C27,-134.3551 27,-112.7385 27,-94.1965"/><polygon points="27,-94.1965 30.5,-104.1965 27,-99.1965 23.5,-104.1965 27,-94.1965"/></g>
-                <g class="edge"><title>CB0200T-&gt;CI0100T</title><path d="M614.4301,-1314.9848C605.7191,-1299.0873 595.7498,-1280.8934 586.6382,-1264.2648"/><polygon points="589.5527,-1262.3001 581.6779,-1255.2122 583.4139,-1265.6639 589.5527,-1262.3001"/></g>
-                <g class="edge"><title>CB0200T-&gt;CB0300T</title><path d="M704.616,-1332.2218C742.2181,-1315.0192 787.9491,-1289.3258 820,-1255.5 849.6663,-1224.1909 843.3131,-1206.8767 863,-1168.5 871.2251,-1152.4663 880.3649,-1135.118 888.7512,-1119.3764"/><polygon points="891.9664,-1120.7856 893.5892,-1110.3158 885.7915,-1117.4884 891.9664,-1120.7856"/></g>
-                <g class="edge"><title>CB0200T-&gt;CI0200T</title><path d="M640.2779,-1314.955C643.6867,-1251.2561 650.4202,-1128.1385 657,-1023.5 657.9727,-1008.0309 659.101,-991.241 660.164,-975.8533"/><polygon points="663.6847,-975.6765 660.8868,-965.4578 656.7015,-975.1909 663.6847,-975.6765"/></g>
-                <g class="edge"><title>CB0200T-&gt;CB7000T</title><path d="M673.7555,-1314.7307C712.3565,-1266.7542 774.1858,-1186.1247 818,-1110.5 839.2423,-1073.8351 833.9543,-1059.0591 857,-1023.5 905.2189,-949.0992 975.4102,-874.6815 1023.4635,-827.3894"/><polygon points="1025.9839,-829.82 1030.683,-820.3243 1021.0879,-824.8171 1025.9839,-829.82"/></g>
-                <g class="edge"><title>CB0200T-&gt;CB0600T</title><path d="M571.2066,-1335.9256C549.5061,-1328.9019 525.2794,-1321.2166 503,-1314.5 410.1793,-1286.5174 357.5634,-1327.8207 293,-1255.5 186.1553,-1135.8179 203.8949,-927.4838 219.6257,-830.0641"/><polygon points="223.0868,-830.5869 221.2826,-820.1468 216.1825,-829.4333 223.0868,-830.5869"/></g>
-                <g class="edge"><title>CB0000T-&gt;CB0001T</title><path d="M947.8619,-1318.9505C944.6059,-1317.2949 941.3069,-1315.7918 938,-1314.5 753.808,-1242.5492 690.2293,-1297.5243 497,-1255.5 470.0256,-1249.6335 440.7766,-1241.1312 415.8013,-1233.1966"/><polygon points="416.6879,-1229.8053 406.0965,-1230.0743 414.544,-1236.4689 416.6879,-1229.8053"/></g>
-                <g class="edge"><title>CB0000T-&gt;CB0300T</title><path d="M1001.6079,-1314.6355C1001.7378,-1275.4145 998.5949,-1216.6114 982,-1168.5 976.0681,-1151.3025 966.6688,-1134.0797 956.8414,-1118.8322"/><polygon points="959.4828,-1116.4838 951.0286,-1110.0981 953.6553,-1120.3621 959.4828,-1116.4838"/></g>
-                <g class="edge"><title>CB0000T-&gt;CB0501T</title><path d="M1007.2829,-1314.7486C1016.0169,-1262.8791 1030.6538,-1175.9541 1040.0635,-1120.0717"/><polygon points="1043.548,-1120.4562 1041.7571,-1110.0139 1036.6451,-1119.2939 1043.548,-1120.4562"/></g>
-                <g class="edge"><title>CB0000T-&gt;CB7000T</title><path d="M1028.7991,-1314.6898C1058.6335,-1267.0015 1103.3193,-1186.9208 1121,-1110.5 1143.6007,-1012.8136 1116.0971,-896.1551 1095.529,-829.9084"/><polygon points="1098.7824,-828.5888 1092.4239,-820.1141 1092.1097,-830.7042 1098.7824,-828.5888"/></g>
-                <g class="edge"><title>CB0100T-&gt;CB0101T</title><path d="M891.9635,-1314.9848C896.6658,-1299.3817 902.0348,-1281.5665 906.9701,-1265.1902"/><polygon points="910.4427,-1265.7968 909.9771,-1255.2122 903.7404,-1263.7769 910.4427,-1265.7968"/></g>
-                <g class="edge"><title>CS0000T-&gt;CS0001T</title><path d="M1792,-1314.9848C1792,-1299.5289 1792,-1281.9024 1792,-1265.654"/><polygon points="1795.5001,-1265.2122 1792,-1255.2122 1788.5001,-1265.2123 1795.5001,-1265.2122"/></g>
-                <g class="edge"><title>OC0000L-&gt;CI0000T</title><path d="M1256.4108,-1314.9848C1256.199,-1299.5289 1255.9576,-1281.9024 1255.735,-1265.654"/><polygon points="1259.2287,-1265.1633 1255.5919,-1255.2122 1252.2293,-1265.2593 1259.2287,-1265.1633"/></g>
-                <g class="edge"><title>CB0500T-&gt;CB0501T</title><path d="M1110.2986,-1314.7486C1097.4383,-1262.7714 1075.8684,-1175.5933 1062.0452,-1119.7242"/><polygon points="1065.442,-1118.8805 1059.6426,-1110.0139 1058.6469,-1120.5618 1065.442,-1118.8805"/></g>
-                <g class="edge"><title>CB0001T-&gt;CB0002T</title><path d="M365.5957,-1168.8878C369.7236,-1153.5404 374.4204,-1136.0781 378.7453,-1119.9984"/><polygon points="382.1641,-1120.7624 381.3816,-1110.1965 375.4043,-1118.9442 382.1641,-1120.7624"/></g>
-                <g class="edge"><title>CB0001T-&gt;CB0600T</title><path d="M326.4414,-1168.9151C316.2357,-1151.3632 305.3682,-1130.5203 298,-1110.5 279.2841,-1059.6469 252.4831,-910.4835 238.788,-829.9758"/><polygon points="242.2253,-829.3107 237.1044,-820.0357 235.3236,-830.4798 242.2253,-829.3107"/></g>
-                <g class="edge"><title>CB0001T-&gt;IA7800T</title><path d="M342.0022,-1168.8971C337.6022,-1150.9877 333.1697,-1129.8927 331,-1110.5 312.3695,-943.9811 298.247,-897.4142 333,-733.5 347.537,-664.9356 340.0002,-631.9444 395,-588.5 475.3835,-525.0051 781.7721,-499.1136 918.4703,-490.5619"/><polygon points="919.0346,-494.034 928.8017,-489.9285 918.6062,-487.0471 919.0346,-494.034"/></g>
-                <g class="edge"><title>CI0100T-&gt;CI0101T</title><path d="M546.107,-1168.8878C541.8732,-1153.5404 537.056,-1136.0781 532.6202,-1119.9984"/><polygon points="535.9496,-1118.9056 529.9163,-1110.1965 529.2017,-1120.7672 535.9496,-1118.9056"/></g>
-                <g class="edge"><title>CI0100T-&gt;CI0300T</title><path d="M570.5257,-1168.7581C579.9075,-1130.4257 589.7428,-1073.0108 581,-1023.5 578.11,-1007.1338 572.7878,-989.9369 567.0634,-974.4452"/><polygon points="570.3081,-973.1311 563.4653,-965.0425 563.7704,-975.6329 570.3081,-973.1311"/></g>
-                <g class="edge"><title>CB0101T-&gt;CB0102T</title><path d="M872.4479,-1172.3781C850.4371,-1155.1264 824.4059,-1134.7235 801.1396,-1116.4878"/><polygon points="803.0662,-1113.5509 793.0365,-1110.1367 798.748,-1119.0603 803.0662,-1113.5509"/></g>
-                <g class="edge"><title>CB0101T-&gt;CB0501T</title><path d="M960.463,-1168.8878C974.3026,-1152.9613 990.1214,-1134.7572 1004.5227,-1118.1842"/><polygon points="1007.5464,-1120.0405 1011.4638,-1110.1965 1002.2626,-1115.449 1007.5464,-1120.0405"/></g>
-                <g class="edge"><title>CS0001T-&gt;CS0002T</title><path d="M1792,-1168.8878C1792,-1153.6852 1792,-1136.4074 1792,-1120.4539"/><polygon points="1795.5001,-1120.1964 1792,-1110.1965 1788.5001,-1120.1965 1795.5001,-1120.1964"/></g>
-                <g class="edge"><title>OC0000L-&gt;CI0000T</title><path d="M1256.4108,-1314.9848C1256.199,-1299.5289 1255.9576,-1281.9024 1255.735,-1265.654"/><polygon points="1259.2287,-1265.1633 1255.5919,-1255.2122 1252.2293,-1265.2593 1259.2287,-1265.1633"/></g>
-                <g class="edge"><title>IA7000T-&gt;CI7000T</title><path d="M1623.7288,-1168.8972C1632.9709,-1117.3545 1648.4413,-1031.0773 1658.4302,-975.3701"/><polygon points="1661.9088,-975.8002 1660.2288,-965.3394 1655.0187,-974.5647 1661.9088,-975.8002"/></g>
-                <g class="edge"><title>IA7000T-&gt;IA7500T</title><path d="M1608.4958,-1168.9173C1599.3212,-1112.4139 1585,-1010.1033 1585,-922 1585,-922 1585,-922 1585,-777 1585,-692.921 1581.4867,-671.6467 1569,-588.5 1566.6277,-572.7031 1563.2625,-555.6837 1559.8758,-540.18"/><polygon points="1563.2514,-539.2364 1557.6574,-530.2388 1556.4195,-540.7611 1563.2514,-539.2364"/></g>
-                <g class="edge"><title>CI0000T-&gt;CB0300T</title><path d="M1186.7368,-1193.168C1131.0405,-1176.4684 1050.9216,-1149.3725 976.6049,-1110.4677"/><polygon points="978.0452,-1107.2695 967.5727,-1105.6645 974.7586,-1113.45 978.0452,-1107.2695"/></g>
-                <g class="edge"><title>CI0000T-&gt;CI7100T</title><path d="M1266.7418,-1168.8972C1280.8119,-1117.2475 1304.3834,-1030.7191 1319.5556,-975.0238"/><polygon points="1322.9423,-975.9078 1322.1937,-965.3394 1316.1884,-974.0679 1322.9423,-975.9078"/></g>
-                <g class="edge"><title>CI0000T-&gt;CI7101T</title><path d="M1285.6178,-1168.8972C1322.6108,-1116.8198 1384.7917,-1029.2836 1424.3132,-973.6464"/><polygon points="1427.2763,-975.5188 1430.2141,-965.3394 1421.5696,-971.465 1427.2763,-975.5188"/></g>
-                <g class="edge"><title>CI0000T-&gt;IA7200T</title><path d="M1228.9932,-1168.8693C1219.4592,-1151.3111 1209.4374,-1130.4758 1203,-1110.5 1151.0218,-949.2086 1188.6051,-897.5166 1146,-733.5 1141.8082,-717.3628 1135.9656,-700.2364 1130.1171,-684.739"/><polygon points="1133.3508,-683.3966 1126.4896,-675.3235 1126.8188,-685.9133 1133.3508,-683.3966"/></g>
-                <g class="edge"><title>CI0000T-&gt;IA7600T</title><path d="M1245.8013,-1168.9942C1234.5551,-1112.574 1217,-1010.353 1217,-922 1217,-922 1217,-922 1217,-777 1217,-692.2495 1189.4992,-597.0602 1169.7356,-539.5944"/><polygon points="1172.9899,-538.2971 1166.39,-530.0091 1166.3809,-540.6039 1172.9899,-538.2971"/></g>
-                <g class="edge"><title>CI0000T-&gt;CI7200T</title><path d="M1255,-1168.7637C1255,-1112.0942 1255,-1009.6042 1255,-922 1255,-922 1255,-922 1255,-632 1255,-547.303 1273.1658,-514.5091 1227,-443.5 1203.3805,-407.1701 1161.7042,-381.3535 1126.8079,-364.85"/><polygon points="1128.1821,-361.6298 1117.6328,-360.6479 1125.2672,-367.9941 1128.1821,-361.6298"/></g>
-                <g class="edge"><title>CB0002T-&gt;CB0003T</title><path d="M393.2973,-1023.8878C393.4022,-1008.6852 393.5213,-991.4074 393.6314,-975.4539"/><polygon points="397.1329,-975.2204 393.7021,-965.1965 390.1331,-975.1721 397.1329,-975.2204"/></g>
-                <g class="edge"><title>CB0002T-&gt;CI0200T</title><path d="M446.2669,-1028.4613C449.1818,-1026.7207 452.1037,-1025.0547 455,-1023.5 517.2471,-990.0858 540.8815,-999.1526 603,-965.5 603.4146,-965.2754 603.8297,-965.0484 604.2451,-964.8192"/><polygon points="606.1215,-967.7767 612.9944,-959.7135 602.5934,-961.7308 606.1215,-967.7767"/></g>
-                <g class="edge"><title>CS0002T-&gt;CS0003T</title><path d="M1792,-1023.8878C1792,-1008.6852 1792,-991.4074 1792,-975.4539"/><polygon points="1795.5001,-975.1964 1792,-965.1965 1788.5001,-975.1965 1795.5001,-975.1964"/></g>
-                <g class="edge"><title>CB0102T-&gt;CI0200T</title><path d="M715.9979,-1023.8878C708.0916,-1008.3956 699.0854,-990.7484 690.8154,-974.5437"/><polygon points="693.7083,-972.5126 686.0451,-965.1965 687.4733,-975.6946 693.7083,-972.5126"/></g>
-                <g class="edge"><title>CB0102T-&gt;IA3100T</title><path d="M743.1545,-1023.686C745.9835,-984.029 745.356,-924.6641 724,-878.5 685.6261,-795.5493 606.4355,-725.2027 547.4088,-681.1538"/><polygon points="549.3454,-678.2332 539.22,-675.1143 545.1904,-683.8667 549.3454,-678.2332"/></g>
-                <g class="edge"><title>CB0003T-&gt;CI0400T</title><path d="M394,-878.8878C394,-863.6852 394,-846.4074 394,-830.4539"/><polygon points="397.5001,-830.1964 394,-820.1965 390.5001,-830.1965 397.5001,-830.1964"/></g>
-                <g class="edge"><title>CB0003T-&gt;IA3100T</title><path d="M425.847,-878.6035C436.9264,-861.3465 448.2579,-840.7906 455,-820.5 469.5996,-776.5621 473.8882,-723.9507 474.791,-685.489"/><polygon points="478.2979,-685.0908 474.9616,-675.035 471.2988,-684.9766 478.2979,-685.0908"/></g>
-                <g class="edge"><title>CI0300T-&gt;IA7400T</title><path d="M587.9946,-878.8972C641.4769,-826.499 731.5989,-738.2037 788.3308,-682.6219"/><polygon points="791.0702,-684.8378 795.7639,-675.3394 786.1714,-679.8376 791.0702,-684.8378"/></g>
-                <g class="edge"><title>CI0300T-&gt;IA7600T</title><path d="M594.7963,-884.5891C597.8872,-882.4949 600.9712,-880.4506 604,-878.5 647.8438,-850.2631 662.0896,-848.6334 706,-820.5 849.5139,-728.5507 1006.5668,-604.5426 1090.0098,-536.611"/><polygon points="1092.3148,-539.2476 1097.8523,-530.215 1087.8907,-533.8229 1092.3148,-539.2476"/></g>
-                <g class="edge"><title>CI7100T-&gt;CI7102T</title><path d="M1334,-878.8878C1334,-863.6852 1334,-846.4074 1334,-830.4539"/><polygon points="1337.5001,-830.1964 1334,-820.1965 1330.5001,-830.1965 1337.5001,-830.1964"/></g>
-                <g class="edge"><title>CI7101T-&gt;IA7300T</title><path d="M1461,-878.8878C1461,-863.6852 1461,-846.4074 1461,-830.4539"/><polygon points="1464.5001,-830.1964 1461,-820.1965 1457.5001,-830.1965 1464.5001,-830.1964"/></g>
-                <g class="edge"><title>CI7101T-&gt;IA7500T</title><path d="M1496.8549,-878.6911C1508.9723,-861.6053 1521.1552,-841.1427 1528,-820.5 1559.4025,-725.7956 1557.1781,-607.7566 1552.3419,-540.5211"/><polygon points="1555.8031,-539.8806 1551.548,-530.1778 1548.8236,-540.4164 1555.8031,-539.8806"/></g>
-                <g class="edge"><title>CI7000T-&gt;CI7001T</title><path d="M1680.785,-878.8878C1685.3363,-863.5404 1690.5148,-846.0781 1695.2832,-829.9984"/><polygon points="1698.7024,-830.7789 1698.19,-820.1965 1691.9912,-828.7887 1698.7024,-830.7789"/></g>
-                <g class="edge"><title>CI7000T-&gt;IA7700T</title><path d="M1657.7256,-878.558C1645.2916,-822.0927 1626,-720.2638 1626,-632 1626,-632 1626,-632 1626,-487 1626,-401.3134 1593.3523,-306.3481 1569.7691,-248.9274"/><polygon points="1572.8539,-247.2309 1565.7753,-239.3478 1566.393,-249.9246 1572.8539,-247.2309"/></g>
-                <g class="edge"><title>CB7000T-&gt;IA7200T</title><path d="M1086.2171,-733.8878C1089.4983,-718.5404 1093.2316,-701.0781 1096.6693,-684.9984"/><polygon points="1100.0968,-685.7072 1098.7649,-675.1965 1093.2515,-684.2437 1100.0968,-685.7072"/></g>
-                <g class="edge"><title>CB7000T-&gt;IA7800T</title><path d="M1063.326,-733.8972C1046.9406,-682.2475 1019.4902,-595.7191 1001.8213,-540.0238"/><polygon points="1005.1092,-538.8129 998.7491,-530.3394 998.4369,-540.9296 1005.1092,-538.8129"/></g>
-                <g class="edge"><title>CI0400T-&gt;IA3100T</title><path d="M417.786,-733.8878C426.4133,-718.2509 436.2519,-700.4184 445.2608,-684.0897"/><polygon points="448.4012,-685.643 450.1675,-675.1965 442.2721,-682.2615 448.4012,-685.643"/></g>
-                <g class="edge"><title>CI0400T-&gt;CI0401T</title><path d="M345.2386,-733.8878C326.7339,-717.5269 305.5107,-698.7625 286.3616,-681.8319"/><polygon points="288.6668,-679.1982 278.8567,-675.1965 284.0301,-684.4424 288.6668,-679.1982"/></g>
-                <g class="edge"><title>CI7001T-&gt;IA7100T</title><path d="M1736.57,-733.8878C1745.8443,-718.2509 1756.4208,-700.4184 1766.1054,-684.0897"/><polygon points="1769.2891,-685.5829 1771.38,-675.1965 1763.2684,-682.012 1769.2891,-685.5829"/></g>
-                <g class="edge"><title>CI7001T-&gt;CI7002T</title><path d="M1711,-733.8972C1711,-682.3545 1711,-596.0773 1711,-540.3701"/><polygon points="1714.5001,-540.3394 1711,-530.3394 1707.5001,-540.3394 1714.5001,-540.3394"/></g>
-                <g class="edge"><title>IA7300T-&gt;IA7700T</title><path d="M1462.2126,-733.8433C1464.4908,-670.0336 1470.7454,-546.9105 1487,-443.5 1497.6522,-375.7314 1517.0932,-299.1015 1530.7395,-249.3016"/><polygon points="1534.1849,-249.9734 1533.4726,-239.4026 1527.4373,-248.1104 1534.1849,-249.9734"/></g>
-                <g class="edge"><title>CB0600T-&gt;CI7300T</title><path d="M196.7359,-733.7496C185.13,-716.5106 173.2148,-695.9288 166,-675.5 132.6017,-580.9321 126.4797,-462.8462 126.0563,-395.5652"/><polygon points="129.5556,-395.207 126.034,-385.2146 122.5557,-395.2222 129.5556,-395.207"/></g>
-                <g class="edge"><title>CI0401T-&gt;IA3400T</title><path d="M232.9726,-588.8972C236.5273,-537.3545 242.4774,-451.0773 246.3193,-395.3701"/><polygon points="249.8147,-395.5565 247.0111,-385.3394 242.8313,-395.0749 249.8147,-395.5565"/></g>
-                <g class="edge"><title>IA7400T-&gt;CI7200T</title><path d="M850.8165,-588.6419C862.6346,-547.858 884.7337,-486.7621 920,-443.5 943.7076,-414.4173 977.8389,-390.1536 1007.2465,-372.6496"/><polygon points="1009.322,-375.4914 1016.2046,-367.4365 1005.8011,-369.4413 1009.322,-375.4914"/></g>
-            </g>
-        </svg>
-    </div>
-
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const container = document.getElementById('graph-container');
-            const svgElement = document.getElementById('viewport');
-            const nodes = document.querySelectorAll('.course');
-            const edges = document.querySelectorAll('.edge');
-            const searchInput = document.getElementById('search');
-
-            // --- CATEGORIZATION LOGIC ---
-            // Based on original stroke colors
-            const colorMap = {
-                '#ff0000': 'red',   // Basic Science
-                '#00ff00': 'green', // Computing
-                '#0000ff': 'blue',  // Humanities/English
-                '#ffa500': 'orange',// Applied/AI
-                '#a52a2a': 'brown'  // Tools
-            };
-
-            nodes.forEach(node => {
-                const stroke = node.getAttribute('data-stroke');
-                if (colorMap[stroke]) {
-                    node.setAttribute('data-category', colorMap[stroke]);
-                }
-            });
-
-            // --- DEPENDENCY GRAPH LOGIC ---
-            const adjacency = {}; // Forward connections (Prerequisites -> Unlocks)
-            const reverseAdjacency = {}; // Backward connections (Course -> Prerequisites)
-
-            edges.forEach(edge => {
-                const title = edge.querySelector('title').textContent;
-                if (!title) return;
-                const [source, target] = title.split('->');
-                
-                if (!adjacency[source]) adjacency[source] = [];
-                adjacency[source].push({ target, element: edge });
-
-                if (!reverseAdjacency[target]) reverseAdjacency[target] = [];
-                reverseAdjacency[target].push({ source, element: edge });
-            });
-
-            function resetHighlights() {
-                nodes.forEach(n => {
-                    n.classList.remove('is-selected', 'is-prereq', 'is-postreq', 'faded');
-                });
-                edges.forEach(e => {
-                    e.classList.remove('edge-active', 'faded');
-                });
-            }
-
-            function highlightNode(nodeId) {
-                resetHighlights();
-                
-                // Dim everything
-                nodes.forEach(n => n.classList.add('faded'));
-                edges.forEach(e => e.classList.add('faded'));
-
-                const centralNode = document.getElementById('node' + getNumericId(nodeId)) || document.querySelector(`g.node title:contains('${nodeId}')`)?.parentNode;
-                
-                // Find node element by title matching ID
-                let targetNode = null;
-                nodes.forEach(n => {
-                    if (n.querySelector('title').textContent === nodeId) targetNode = n;
-                });
-
-                if (targetNode) {
-                    targetNode.classList.remove('faded');
-                    targetNode.classList.add('is-selected');
-
-                    // Highlight forward (Post-requisites)
-                    if (adjacency[nodeId]) {
-                        adjacency[nodeId].forEach(conn => {
-                            conn.element.classList.remove('faded');
-                            conn.element.classList.add('edge-active');
-                            const nextNode = findNodeByTitle(conn.target);
-                            if (nextNode) {
-                                nextNode.classList.remove('faded');
-                                nextNode.classList.add('is-postreq');
-                            }
-                        });
-                    }
-
-                    // Highlight backward (Pre-requisites)
-                    if (reverseAdjacency[nodeId]) {
-                        reverseAdjacency[nodeId].forEach(conn => {
-                            conn.element.classList.remove('faded');
-                            conn.element.classList.add('edge-active');
-                            const prevNode = findNodeByTitle(conn.source);
-                            if (prevNode) {
-                                prevNode.classList.remove('faded');
-                                prevNode.classList.add('is-prereq');
-                            }
-                        });
-                    }
-                }
-            }
-
-            function findNodeByTitle(title) {
-                let found = null;
-                nodes.forEach(n => {
-                    if (n.querySelector('title').textContent === title) found = n;
-                });
-                return found;
-            }
-
-            function getNumericId(nodeId) {
-                // Helper mainly if needed to map text ID to DOM ID, but SVG structure is cleaner now
-                return 0; 
-            }
-
-            nodes.forEach(node => {
-                node.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    const title = node.querySelector('title').textContent;
-                    highlightNode(title);
-                });
-            });
-
-            container.addEventListener('click', () => {
-                nodes.forEach(n => n.classList.remove('faded', 'is-selected', 'is-prereq', 'is-postreq'));
-                edges.forEach(e => e.classList.remove('faded', 'edge-active'));
-            });
-
-            // --- SEARCH LOGIC ---
-            searchInput.addEventListener('input', (e) => {
-                const term = e.target.value.toLowerCase();
-                if (term.length < 2) {
-                    nodes.forEach(n => n.classList.remove('faded'));
-                    return;
-                }
-
-                nodes.forEach(n => {
-                    const text = n.textContent.toLowerCase();
-                    if (text.includes(term)) {
-                        n.classList.remove('faded');
-                        n.classList.add('is-selected'); // Highlight matches
-                    } else {
-                        n.classList.add('faded');
-                        n.classList.remove('is-selected');
-                    }
-                });
-            });
-
-
-            // --- PAN AND ZOOM LOGIC ---
-            let isPanning = false;
-            let startPoint = { x: 0, y: 0 };
-            let endPoint = { x: 0, y: 0 };
-            let scale = 0.45; // Start zoomed out to see mostly everything
-            let viewBox = { x: -300, y: 1500 }; // Adjusted starting position based on graph coordinates
-
-            // Apply initial transform
-            updateTransform();
-
-            container.addEventListener('mousedown', (e) => {
-                isPanning = true;
-                startPoint = { x: e.clientX, y: e.clientY };
-                container.style.cursor = 'grabbing';
-            });
-
-            window.addEventListener('mouseup', () => {
-                isPanning = false;
-                container.style.cursor = 'grab';
-            });
-
-            window.addEventListener('mousemove', (e) => {
-                if (!isPanning) return;
-                e.preventDefault();
-                endPoint = { x: e.clientX, y: e.clientY };
-                const dx = (endPoint.x - startPoint.x) / scale;
-                const dy = (endPoint.y - startPoint.y) / scale;
-                
-                viewBox.x -= dx;
-                viewBox.y -= dy; // Invert Y because SVG coords are weird here usually
-                
-                startPoint = { x: e.clientX, y: e.clientY };
-                updateTransform();
-            });
-
-            container.addEventListener('wheel', (e) => {
-                e.preventDefault();
-                const scaleFactor = 1.1;
-                const newScale = e.deltaY < 0 ? scale * scaleFactor : scale / scaleFactor;
-                
-                // Limits
-                if (newScale > 5 || newScale < 0.1) return;
-
-                scale = newScale;
-                updateTransform();
-            });
-
-            function updateTransform() {
-                // The raw SVG has inverted Y coordinates in its transform usually, or standard.
-                // The provided SVG has `translate(4 1470)`.
-                // We simplify by creating a clean viewport group.
-                svgElement.setAttribute('transform', `translate(${-viewBox.x * scale + window.innerWidth/2}, ${-viewBox.y * scale + window.innerHeight/2}) scale(${scale})`);
-            }
-
-            window.resetZoom = function() {
-                scale = 0.45;
-                viewBox = { x: 1100, y: -700 }; // Approximate center based on graph bounding box
-                updateTransform();
-            };
-            
-            // Trigger initial center
-            resetZoom();
-        });
-    </script>
-</body>
-</html>
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
+ "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<!-- Generated by graphviz version 2.40.1 (20161225.0304)
+ -->
+<!-- Title: planEstudios Pages: 1 -->
+<svg width="897pt" height="540pt"
+ viewBox="0.00 0.00 897.04 540.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="graph0" class="graph" transform="scale(.3661 .3661) rotate(0) translate(4 1470.8462)">
+<title>planEstudios</title>
+<polygon fill="#ffffff" stroke="transparent" points="-4,4 -4,-1470.8462 2446,-1470.8462 2446,4 -4,4"/>
+<text text-anchor="middle" x="1221" y="-1426.8462" font-family="Times,serif" font-size="45.00" fill="#000000">Dependencias del plan de estudios de Ingeniería en Computación</text>
+<!-- I -->
+<g id="node1" class="node">
+<title>I</title>
+<polygon fill="#ff7f50" stroke="#ff7f50" points="54,-1401 0,-1401 0,-1315 54,-1315 54,-1401"/>
+<text text-anchor="middle" x="27" y="-1353" font-family="Times,serif" font-size="20.00" fill="#000000">I</text>
+</g>
+<!-- II -->
+<g id="node2" class="node">
+<title>II</title>
+<polygon fill="#7fffd4" stroke="#7fffd4" points="54,-1255 0,-1255 0,-1169 54,-1169 54,-1255"/>
+<text text-anchor="middle" x="27" y="-1207" font-family="Times,serif" font-size="20.00" fill="#000000">II</text>
+</g>
+<!-- I&#45;&gt;II -->
+<g id="edge1" class="edge">
+<title>I&#45;&gt;II</title>
+<path fill="none" stroke="#ffffff" stroke-width="0" d="M27,-1314.9848C27,-1296.1433 27,-1274.0762 27,-1255.2122"/>
+</g>
+<!-- III -->
+<g id="node3" class="node">
+<title>III</title>
+<polygon fill="#8a2be2" stroke="#8a2be2" points="54,-1110 0,-1110 0,-1024 54,-1024 54,-1110"/>
+<text text-anchor="middle" x="27" y="-1062" font-family="Times,serif" font-size="20.00" fill="#000000">III</text>
+</g>
+<!-- II&#45;&gt;III -->
+<g id="edge2" class="edge">
+<title>II&#45;&gt;III</title>
+<path fill="none" stroke="#ffffff" stroke-width="0" d="M27,-1168.8878C27,-1150.3551 27,-1128.7385 27,-1110.1965"/>
+</g>
+<!-- IV -->
+<g id="node4" class="node">
+<title>IV</title>
+<polygon fill="#deb887" stroke="#deb887" points="54,-965 0,-965 0,-879 54,-879 54,-965"/>
+<text text-anchor="middle" x="27" y="-917" font-family="Times,serif" font-size="20.00" fill="#000000">IV</text>
+</g>
+<!-- III&#45;&gt;IV -->
+<g id="edge3" class="edge">
+<title>III&#45;&gt;IV</title>
+<path fill="none" stroke="#ffffff" stroke-width="0" d="M27,-1023.8878C27,-1005.3551 27,-983.7385 27,-965.1965"/>
+</g>
+<!-- V -->
+<g id="node5" class="node">
+<title>V</title>
+<polygon fill="#5f9ea0" stroke="#5f9ea0" points="54,-820 0,-820 0,-734 54,-734 54,-820"/>
+<text text-anchor="middle" x="27" y="-772" font-family="Times,serif" font-size="20.00" fill="#000000">V</text>
+</g>
+<!-- IV&#45;&gt;V -->
+<g id="edge4" class="edge">
+<title>IV&#45;&gt;V</title>
+<path fill="none" stroke="#ffffff" stroke-width="0" d="M27,-878.8878C27,-860.3551 27,-838.7385 27,-820.1965"/>
+</g>
+<!-- VI -->
+<g id="node6" class="node">
+<title>VI</title>
+<polygon fill="#dc143c" stroke="#dc143c" points="54,-675 0,-675 0,-589 54,-589 54,-675"/>
+<text text-anchor="middle" x="27" y="-627" font-family="Times,serif" font-size="20.00" fill="#000000">VI</text>
+</g>
+<!-- V&#45;&gt;VI -->
+<g id="edge5" class="edge">
+<title>V&#45;&gt;VI</title>
+<path fill="none" stroke="#ffffff" stroke-width="0" d="M27,-733.8878C27,-715.3551 27,-693.7385 27,-675.1965"/>
+</g>
+<!-- VII -->
+<g id="node7" class="node">
+<title>VII</title>
+<polygon fill="#b8860b" stroke="#b8860b" points="54,-530 0,-530 0,-444 54,-444 54,-530"/>
+<text text-anchor="middle" x="27" y="-482" font-family="Times,serif" font-size="20.00" fill="#000000">VII</text>
+</g>
+<!-- VI&#45;&gt;VII -->
+<g id="edge6" class="edge">
+<title>VI&#45;&gt;VII</title>
+<path fill="none" stroke="#ffffff" stroke-width="0" d="M27,-588.8878C27,-570.3551 27,-548.7385 27,-530.1965"/>
+</g>
+<!-- VIII -->
+<g id="node8" class="node">
+<title>VIII</title>
+<polygon fill="#2f4f4f" stroke="#2f4f4f" points="54,-385 0,-385 0,-299 54,-299 54,-385"/>
+<text text-anchor="middle" x="27" y="-337" font-family="Times,serif" font-size="20.00" fill="#000000">VIII</text>
+</g>
+<!-- VII&#45;&gt;VIII -->
+<g id="edge7" class="edge">
+<title>VII&#45;&gt;VIII</title>
+<path fill="none" stroke="#ffffff" stroke-width="0" d="M27,-443.8878C27,-425.3551 27,-403.7385 27,-385.1965"/>
+</g>
+<!-- IX -->
+<g id="node9" class="node">
+<title>IX</title>
+<polygon fill="#00bfff" stroke="#00bfff" points="54,-239 0,-239 0,-153 54,-153 54,-239"/>
+<text text-anchor="middle" x="27" y="-191" font-family="Times,serif" font-size="20.00" fill="#000000">IX</text>
+</g>
+<!-- VIII&#45;&gt;IX -->
+<g id="edge8" class="edge">
+<title>VIII&#45;&gt;IX</title>
+<path fill="none" stroke="#ffffff" stroke-width="0" d="M27,-298.9848C27,-280.1433 27,-258.0762 27,-239.2122"/>
+</g>
+<!-- X -->
+<g id="node10" class="node">
+<title>X</title>
+<polygon fill="#228b22" stroke="#228b22" points="54,-94 0,-94 0,-8 54,-8 54,-94"/>
+<text text-anchor="middle" x="27" y="-46" font-family="Times,serif" font-size="20.00" fill="#000000">X</text>
+</g>
+<!-- IX&#45;&gt;X -->
+<g id="edge9" class="edge">
+<title>IX&#45;&gt;X</title>
+<path fill="none" stroke="#ffffff" stroke-width="0" d="M27,-152.8878C27,-134.3551 27,-112.7385 27,-94.1965"/>
+</g>
+<!-- CB0100L -->
+<g id="node11" class="node">
+<title>CB0100L</title>
+<polygon fill="none" stroke="#ff0000" stroke-width="3" points="152.5,-1315 152.5,-1401 255.5,-1401 255.5,-1315 152.5,-1315"/>
+<text text-anchor="middle" x="192.5" y="-1379.8" font-family="Times,serif" font-size="14.00" fill="#000000">CB0100&#45;L</text>
+<polyline fill="none" stroke="#ff0000" stroke-width="3" points="152.5,-1366 232.5,-1366 "/>
+<text text-anchor="middle" x="192.5" y="-1344.3" font-family="Times,serif" font-size="14.00" fill="#000000">Laboratorio</text>
+<text text-anchor="middle" x="192.5" y="-1329.3" font-family="Times,serif" font-size="14.00" fill="#000000">de Física I</text>
+<polyline fill="none" stroke="#ff0000" stroke-width="3" points="232.5,-1315 232.5,-1401 "/>
+<text text-anchor="middle" x="244" y="-1383.3" font-family="Times,serif" font-size="14.00" fill="#000000">0</text>
+<polyline fill="none" stroke="#ff0000" stroke-width="3" points="232.5,-1373 255.5,-1373 "/>
+<text text-anchor="middle" x="244" y="-1354.8" font-family="Times,serif" font-size="14.00" fill="#000000">1</text>
+<polyline fill="none" stroke="#ff0000" stroke-width="3" points="232.5,-1344 255.5,-1344 "/>
+<text text-anchor="middle" x="244" y="-1325.8" font-family="Times,serif" font-size="14.00" fill="#000000">2</text>
+</g>
+<!-- CB0500L -->
+<g id="node12" class="node">
+<title>CB0500L</title>
+<polygon fill="none" stroke="#ff0000" stroke-width="3" points="391.5,-1315 391.5,-1401 494.5,-1401 494.5,-1315 391.5,-1315"/>
+<text text-anchor="middle" x="431.5" y="-1379.8" font-family="Times,serif" font-size="14.00" fill="#000000">CB0500&#45;L</text>
+<polyline fill="none" stroke="#ff0000" stroke-width="3" points="391.5,-1366 471.5,-1366 "/>
+<text text-anchor="middle" x="431.5" y="-1344.3" font-family="Times,serif" font-size="14.00" fill="#000000">Laboratorio</text>
+<text text-anchor="middle" x="431.5" y="-1329.3" font-family="Times,serif" font-size="14.00" fill="#000000">de Química</text>
+<polyline fill="none" stroke="#ff0000" stroke-width="3" points="471.5,-1315 471.5,-1401 "/>
+<text text-anchor="middle" x="483" y="-1383.3" font-family="Times,serif" font-size="14.00" fill="#000000">0</text>
+<polyline fill="none" stroke="#ff0000" stroke-width="3" points="471.5,-1373 494.5,-1373 "/>
+<text text-anchor="middle" x="483" y="-1354.8" font-family="Times,serif" font-size="14.00" fill="#000000">1</text>
+<polyline fill="none" stroke="#ff0000" stroke-width="3" points="471.5,-1344 494.5,-1344 "/>
+<text text-anchor="middle" x="483" y="-1325.8" font-family="Times,serif" font-size="14.00" fill="#000000">2</text>
+</g>
+<!-- CB0200T -->
+<g id="node13" class="node">
+<title>CB0200T</title>
+<polygon fill="none" stroke="#ff0000" stroke-width="3" points="571.5,-1315 571.5,-1401 704.5,-1401 704.5,-1315 571.5,-1315"/>
+<text text-anchor="middle" x="626.5" y="-1375.8" font-family="Times,serif" font-size="14.00" fill="#000000">CB0200&#45;T</text>
+<polyline fill="none" stroke="#ff0000" stroke-width="3" points="571.5,-1358 681.5,-1358 "/>
+<text text-anchor="middle" x="626.5" y="-1332.8" font-family="Times,serif" font-size="14.00" fill="#000000">Álgebra Superior</text>
+<polyline fill="none" stroke="#ff0000" stroke-width="3" points="681.5,-1315 681.5,-1401 "/>
+<text text-anchor="middle" x="693" y="-1383.3" font-family="Times,serif" font-size="14.00" fill="#000000">4</text>
+<polyline fill="none" stroke="#ff0000" stroke-width="3" points="681.5,-1373 704.5,-1373 "/>
+<text text-anchor="middle" x="693" y="-1354.8" font-family="Times,serif" font-size="14.00" fill="#000000">0</text>
+<polyline fill="none" stroke="#ff0000" stroke-width="3" points="681.5,-1344 704.5,-1344 "/>
+<text text-anchor="middle" x="693" y="-1325.8" font-family="Times,serif" font-size="14.00" fill="#000000">8</text>
+</g>
+<!-- CI0100T -->
+<g id="node21" class="node">
+<title>CI0100T</title>
+<polygon fill="none" stroke="#00ff00" stroke-width="3" points="506.5,-1169 506.5,-1255 609.5,-1255 609.5,-1169 506.5,-1169"/>
+<text text-anchor="middle" x="546.5" y="-1233.8" font-family="Times,serif" font-size="14.00" fill="#000000">CI0100&#45;T</text>
+<polyline fill="none" stroke="#00ff00" stroke-width="3" points="506.5,-1220 586.5,-1220 "/>
+<text text-anchor="middle" x="546.5" y="-1198.3" font-family="Times,serif" font-size="14.00" fill="#000000">Electrónica</text>
+<text text-anchor="middle" x="546.5" y="-1183.3" font-family="Times,serif" font-size="14.00" fill="#000000">Analógica I</text>
+<polyline fill="none" stroke="#00ff00" stroke-width="3" points="586.5,-1169 586.5,-1255 "/>
+<text text-anchor="middle" x="598" y="-1237.3" font-family="Times,serif" font-size="14.00" fill="#000000">3</text>
+<polyline fill="none" stroke="#00ff00" stroke-width="3" points="586.5,-1227 609.5,-1227 "/>
+<text text-anchor="middle" x="598" y="-1208.8" font-family="Times,serif" font-size="14.00" fill="#000000">0</text>
+<polyline fill="none" stroke="#00ff00" stroke-width="3" points="586.5,-1198 609.5,-1198 "/>
+<text text-anchor="middle" x="598" y="-1179.8" font-family="Times,serif" font-size="14.00" fill="#000000">6</text>
+</g>
+<!-- CB0200T&#45;&gt;CI0100T -->
+<g id="edge28" class="edge">
+<title>CB0200T&#45;&gt;CI0100T</title>
+<path fill="none" stroke="#000000" d="M614.4301,-1314.9848C605.7191,-1299.0873 595.7498,-1280.8934 586.6382,-1264.2648"/>
+<polygon fill="#000000" stroke="#000000" points="589.5527,-1262.3001 581.6779,-1255.2122 583.4139,-1265.6639 589.5527,-1262.3001"/>
+</g>
+<!-- CB0300T -->
+<g id="node35" class="node">
+<title>CB0300T</title>
+<polygon fill="none" stroke="#ff0000" stroke-width="3" points="866.5,-1024 866.5,-1110 967.5,-1110 967.5,-1024 866.5,-1024"/>
+<text text-anchor="middle" x="905" y="-1088.8" font-family="Times,serif" font-size="14.00" fill="#000000">CB0300&#45;T</text>
+<polyline fill="none" stroke="#ff0000" stroke-width="3" points="866.5,-1075 943.5,-1075 "/>
+<text text-anchor="middle" x="905" y="-1053.3" font-family="Times,serif" font-size="14.00" fill="#000000">Métodos</text>
+<text text-anchor="middle" x="905" y="-1038.3" font-family="Times,serif" font-size="14.00" fill="#000000">Numéricos</text>
+<polyline fill="none" stroke="#ff0000" stroke-width="3" points="943.5,-1024 943.5,-1110 "/>
+<text text-anchor="middle" x="955.5" y="-1092.3" font-family="Times,serif" font-size="14.00" fill="#000000">4</text>
+<polyline fill="none" stroke="#ff0000" stroke-width="3" points="943.5,-1082 967.5,-1082 "/>
+<text text-anchor="middle" x="955.5" y="-1063.8" font-family="Times,serif" font-size="14.00" fill="#000000">0</text>
+<polyline fill="none" stroke="#ff0000" stroke-width="3" points="943.5,-1053 967.5,-1053 "/>
+<text text-anchor="middle" x="955.5" y="-1034.8" font-family="Times,serif" font-size="14.00" fill="#000000">8</text>
+</g>
+<!-- CB0200T&#45;&gt;CB0300T -->
+<g id="edge29" class="edge">
+<title>CB0200T&#45;&gt;CB0300T</title>
+<path fill="none" stroke="#000000" d="M704.616,-1332.2218C742.2181,-1315.0192 787.9491,-1289.3258 820,-1255.5 849.6663,-1224.1909 843.3131,-1206.8767 863,-1168.5 871.2251,-1152.4663 880.3649,-1135.118 888.7512,-1119.3764"/>
+<polygon fill="#000000" stroke="#000000" points="891.9664,-1120.7856 893.5892,-1110.3158 885.7915,-1117.4884 891.9664,-1120.7856"/>
+</g>
+<!-- CI0200T -->
+<g id="node39" class="node">
+<title>CI0200T</title>
+<polygon fill="none" stroke="#00ff00" stroke-width="3" points="613,-879 613,-965 715,-965 715,-879 613,-879"/>
+<text text-anchor="middle" x="652.5" y="-943.8" font-family="Times,serif" font-size="14.00" fill="#000000">CI0200&#45;T</text>
+<polyline fill="none" stroke="#00ff00" stroke-width="3" points="613,-930 692,-930 "/>
+<text text-anchor="middle" x="652.5" y="-908.3" font-family="Times,serif" font-size="14.00" fill="#000000">Circuitos</text>
+<text text-anchor="middle" x="652.5" y="-893.3" font-family="Times,serif" font-size="14.00" fill="#000000">Eléctricos I</text>
+<polyline fill="none" stroke="#00ff00" stroke-width="3" points="692,-879 692,-965 "/>
+<text text-anchor="middle" x="703.5" y="-947.3" font-family="Times,serif" font-size="14.00" fill="#000000">4</text>
+<polyline fill="none" stroke="#00ff00" stroke-width="3" points="692,-937 715,-937 "/>
+<text text-anchor="middle" x="703.5" y="-918.8" font-family="Times,serif" font-size="14.00" fill="#000000">0</text>
+<polyline fill="none" stroke="#00ff00" stroke-width="3" points="692,-908 715,-908 "/>
+<text text-anchor="middle" x="703.5" y="-889.8" font-family="Times,serif" font-size="14.00" fill="#000000">8</text>
+</g>
+<!-- CB0200T&#45;&gt;CI0200T -->
+<g id="edge27" class="edge">
+<title>CB0200T&#45;&gt;CI0200T</title>
+<path fill="none" stroke="#000000" d="M640.2779,-1314.955C643.6867,-1251.2561 650.4202,-1128.1385 657,-1023.5 657.9727,-1008.0309 659.101,-991.241 660.164,-975.8533"/>
+<polygon fill="#000000" stroke="#000000" points="663.6847,-975.6765 660.8868,-965.4578 656.7015,-975.1909 663.6847,-975.6765"/>
+</g>
+<!-- CB7000T -->
+<g id="node46" class="node">
+<title>CB7000T</title>
+<polygon fill="none" stroke="#ff0000" stroke-width="3" points="1016.5,-734 1016.5,-820 1137.5,-820 1137.5,-734 1016.5,-734"/>
+<text text-anchor="middle" x="1065.5" y="-794.8" font-family="Times,serif" font-size="14.00" fill="#000000">CB7000&#45;T</text>
+<polyline fill="none" stroke="#ff0000" stroke-width="3" points="1016.5,-777 1114.5,-777 "/>
+<text text-anchor="middle" x="1065.5" y="-751.8" font-family="Times,serif" font-size="14.00" fill="#000000">Álgebra Lineal</text>
+<polyline fill="none" stroke="#ff0000" stroke-width="3" points="1114.5,-734 1114.5,-820 "/>
+<text text-anchor="middle" x="1126" y="-802.3" font-family="Times,serif" font-size="14.00" fill="#000000">4</text>
+<polyline fill="none" stroke="#ff0000" stroke-width="3" points="1114.5,-792 1137.5,-792 "/>
+<text text-anchor="middle" x="1126" y="-773.8" font-family="Times,serif" font-size="14.00" fill="#000000">0</text>
+<polyline fill="none" stroke="#ff0000" stroke-width="3" points="1114.5,-763 1137.5,-763 "/>
+<text text-anchor="middle" x="1126" y="-744.8" font-family="Times,serif" font-size="14.00" fill="#000000">8</text>
+</g>
+<!-- CB0200T&#45;&gt;CB7000T -->
+<g id="edge26" class="edge">
+<title>CB0200T&#45;&gt;CB7000T</title>
+<path fill="none" stroke="#000000" d="M673.7555,-1314.7307C712.3565,-1266.7542 774.1858,-1186.1247 818,-1110.5 839.2423,-1073.8351 833.9543,-1059.0591 857,-1023.5 905.2189,-949.0992 975.4102,-874.6815 1023.4635,-827.3894"/>
+<polygon fill="#000000" stroke="#000000" points="1025.9839,-829.82 1030.683,-820.3243 1021.0879,-824.8171 1025.9839,-829.82"/>
+</g>
+<!-- CB0600T -->
+<g id="node53" class="node">
+<title>CB0600T</title>
+<polygon fill="none" stroke="#ff0000" stroke-width="3" points="175.5,-734 175.5,-820 284.5,-820 284.5,-734 175.5,-734"/>
+<text text-anchor="middle" x="218.5" y="-798.8" font-family="Times,serif" font-size="14.00" fill="#000000">CB0600&#45;T</text>
+<polyline fill="none" stroke="#ff0000" stroke-width="3" points="175.5,-785 261.5,-785 "/>
+<text text-anchor="middle" x="218.5" y="-763.3" font-family="Times,serif" font-size="14.00" fill="#000000">Probabilidad</text>
+<text text-anchor="middle" x="218.5" y="-748.3" font-family="Times,serif" font-size="14.00" fill="#000000">y Estadística</text>
+<polyline fill="none" stroke="#ff0000" stroke-width="3" points="261.5,-734 261.5,-820 "/>
+<text text-anchor="middle" x="273" y="-802.3" font-family="Times,serif" font-size="14.00" fill="#000000">4</text>
+<polyline fill="none" stroke="#ff0000" stroke-width="3" points="261.5,-792 284.5,-792 "/>
+<text text-anchor="middle" x="273" y="-773.8" font-family="Times,serif" font-size="14.00" fill="#000000">0</text>
+<polyline fill="none" stroke="#ff0000" stroke-width="3" points="261.5,-763 284.5,-763 "/>
+<text text-anchor="middle" x="273" y="-744.8" font-family="Times,serif" font-size="14.00" fill="#000000">8</text>
+</g>
+<!-- CB0200T&#45;&gt;CB0600T -->
+<g id="edge30" class="edge">
+<title>CB0200T&#45;&gt;CB0600T</title>
+<path fill="none" stroke="#000000" d="M571.2066,-1335.9256C549.5061,-1328.9019 525.2794,-1321.2166 503,-1314.5 410.1793,-1286.5174 357.5634,-1327.8207 293,-1255.5 186.1553,-1135.8179 203.8949,-927.4838 219.6257,-830.0641"/>
+<polygon fill="#000000" stroke="#000000" points="223.0868,-830.5869 221.2826,-820.1468 216.1825,-829.4333 223.0868,-830.5869"/>
+</g>
+<!-- CB0000T -->
+<g id="node14" class="node">
+<title>CB0000T</title>
+<polygon fill="none" stroke="#ff0000" stroke-width="3" points="948,-1315 948,-1401 1052,-1401 1052,-1315 948,-1315"/>
+<text text-anchor="middle" x="985" y="-1375.8" font-family="Times,serif" font-size="14.00" fill="#000000">CB0000&#45;T</text>
+<polyline fill="none" stroke="#ff0000" stroke-width="3" points="948,-1358 1022,-1358 "/>
+<text text-anchor="middle" x="985" y="-1332.8" font-family="Times,serif" font-size="14.00" fill="#000000">Cálculo I</text>
+<polyline fill="none" stroke="#ff0000" stroke-width="3" points="1022,-1315 1022,-1401 "/>
+<text text-anchor="middle" x="1037" y="-1383.3" font-family="Times,serif" font-size="14.00" fill="#000000">5</text>
+<polyline fill="none" stroke="#ff0000" stroke-width="3" points="1022,-1373 1052,-1373 "/>
+<text text-anchor="middle" x="1037" y="-1354.8" font-family="Times,serif" font-size="14.00" fill="#000000">0</text>
+<polyline fill="none" stroke="#ff0000" stroke-width="3" points="1022,-1344 1052,-1344 "/>
+<text text-anchor="middle" x="1037" y="-1325.8" font-family="Times,serif" font-size="14.00" fill="#000000">10</text>
+</g>
+<!-- CB0001T -->
+<g id="node20" class="node">
+<title>CB0001T</title>
+<polygon fill="none" stroke="#ff0000" stroke-width="3" points="302,-1169 302,-1255 406,-1255 406,-1169 302,-1169"/>
+<text text-anchor="middle" x="339" y="-1229.8" font-family="Times,serif" font-size="14.00" fill="#000000">CB0001&#45;T</text>
+<polyline fill="none" stroke="#ff0000" stroke-width="3" points="302,-1212 376,-1212 "/>
+<text text-anchor="middle" x="339" y="-1186.8" font-family="Times,serif" font-size="14.00" fill="#000000">Cálculo II</text>
+<polyline fill="none" stroke="#ff0000" stroke-width="3" points="376,-1169 376,-1255 "/>
+<text text-anchor="middle" x="391" y="-1237.3" font-family="Times,serif" font-size="14.00" fill="#000000">5</text>
+<polyline fill="none" stroke="#ff0000" stroke-width="3" points="376,-1227 406,-1227 "/>
+<text text-anchor="middle" x="391" y="-1208.8" font-family="Times,serif" font-size="14.00" fill="#000000">0</text>
+<polyline fill="none" stroke="#ff0000" stroke-width="3" points="376,-1198 406,-1198 "/>
+<text text-anchor="middle" x="391" y="-1179.8" font-family="Times,serif" font-size="14.00" fill="#000000">10</text>
+</g>
+<!-- CB0000T&#45;&gt;CB0001T -->
+<g id="edge11" class="edge">
+<title>CB0000T&#45;&gt;CB0001T</title>
+<path fill="none" stroke="#000000" d="M947.8619,-1318.9505C944.6059,-1317.2949 941.3069,-1315.7918 938,-1314.5 753.808,-1242.5492 690.2293,-1297.5243 497,-1255.5 470.0256,-1249.6335 440.7766,-1241.1312 415.8013,-1233.1966"/>
+<polygon fill="#000000" stroke="#000000" points="416.6879,-1229.8053 406.0965,-1230.0743 414.544,-1236.4689 416.6879,-1229.8053"/>
+</g>
+<!-- CB0000T&#45;&gt;CB0300T -->
+<g id="edge12" class="edge">
+<title>CB0000T&#45;&gt;CB0300T</title>
+<path fill="none" stroke="#000000" d="M1001.6079,-1314.6355C1001.7378,-1275.4145 998.5949,-1216.6114 982,-1168.5 976.0681,-1151.3025 966.6688,-1134.0797 956.8414,-1118.8322"/>
+<polygon fill="#000000" stroke="#000000" points="959.4828,-1116.4838 951.0286,-1110.0981 953.6553,-1120.3621 959.4828,-1116.4838"/>
+</g>
+<!-- CB0501T -->
+<g id="node37" class="node">
+<title>CB0501T</title>
+<polygon fill="none" stroke="#ff0000" stroke-width="3" points="985.5,-1024 985.5,-1110 1112.5,-1110 1112.5,-1024 985.5,-1024"/>
+<text text-anchor="middle" x="1037.5" y="-1084.8" font-family="Times,serif" font-size="14.00" fill="#000000">CB0501&#45;T</text>
+<polyline fill="none" stroke="#ff0000" stroke-width="3" points="985.5,-1067 1089.5,-1067 "/>
+<text text-anchor="middle" x="1037.5" y="-1041.8" font-family="Times,serif" font-size="14.00" fill="#000000">Termodinámica</text>
+<polyline fill="none" stroke="#ff0000" stroke-width="3" points="1089.5,-1024 1089.5,-1110 "/>
+<text text-anchor="middle" x="1101" y="-1092.3" font-family="Times,serif" font-size="14.00" fill="#000000">4</text>
+<polyline fill="none" stroke="#ff0000" stroke-width="3" points="1089.5,-1082 1112.5,-1082 "/>
+<text text-anchor="middle" x="1101" y="-1063.8" font-family="Times,serif" font-size="14.00" fill="#000000">0</text>
+<polyline fill="none" stroke="#ff0000" stroke-width="3" points="1089.5,-1053 1112.5,-1053 "/>
+<text text-anchor="middle" x="1101" y="-1034.8" font-family="Times,serif" font-size="14.00" fill="#000000">8</text>
+</g>
+<!-- CB0000T&#45;&gt;CB0501T -->
+<g id="edge13" class="edge">
+<title>CB0000T&#45;&gt;CB0501T</title>
+<path fill="none" stroke="#000000" d="M1007.2829,-1314.7486C1016.0169,-1262.8791 1030.6538,-1175.9541 1040.0635,-1120.0717"/>
+<polygon fill="#000000" stroke="#000000" points="1043.548,-1120.4562 1041.7571,-1110.0139 1036.6451,-1119.2939 1043.548,-1120.4562"/>
+</g>
+<!-- CB0000T&#45;&gt;CB7000T -->
+<g id="edge10" class="edge">
+<title>CB0000T&#45;&gt;CB7000T</title>
+<path fill="none" stroke="#000000" d="M1028.7991,-1314.6898C1058.6335,-1267.0015 1103.3193,-1186.9208 1121,-1110.5 1143.6007,-1012.8136 1116.0971,-896.1551 1095.529,-829.9084"/>
+<polygon fill="#000000" stroke="#000000" points="1098.7824,-828.5888 1092.4239,-820.1141 1092.1097,-830.7042 1098.7824,-828.5888"/>
+</g>
+<!-- CB0100T -->
+<g id="node15" class="node">
+<title>CB0100T</title>
+<polygon fill="none" stroke="#ff0000" stroke-width="3" points="828.5,-1315 828.5,-1401 929.5,-1401 929.5,-1315 828.5,-1315"/>
+<text text-anchor="middle" x="866.5" y="-1375.8" font-family="Times,serif" font-size="14.00" fill="#000000">CB0100&#45;T</text>
+<polyline fill="none" stroke="#ff0000" stroke-width="3" points="828.5,-1358 904.5,-1358 "/>
+<text text-anchor="middle" x="866.5" y="-1332.8" font-family="Times,serif" font-size="14.00" fill="#000000">Física I</text>
+<polyline fill="none" stroke="#ff0000" stroke-width="3" points="904.5,-1315 904.5,-1401 "/>
+<text text-anchor="middle" x="917" y="-1383.3" font-family="Times,serif" font-size="14.00" fill="#000000">4</text>
+<polyline fill="none" stroke="#ff0000" stroke-width="3" points="904.5,-1373 929.5,-1373 "/>
+<text text-anchor="middle" x="917" y="-1354.8" font-family="Times,serif" font-size="14.00" fill="#000000">0</text>
+<polyline fill="none" stroke="#ff0000" stroke-width="3" points="904.5,-1344 929.5,-1344 "/>
+<text text-anchor="middle" x="917" y="-1325.8" font-family="Times,serif" font-size="14.00" fill="#000000">8</text>
+</g>
+<!-- CB0101T -->
+<g id="node22" class="node">
+<title>CB0101T</title>
+<polygon fill="none" stroke="#ff0000" stroke-width="3" points="872.5,-1169 872.5,-1255 973.5,-1255 973.5,-1169 872.5,-1169"/>
+<text text-anchor="middle" x="910.5" y="-1229.8" font-family="Times,serif" font-size="14.00" fill="#000000">CB0101&#45;T</text>
+<polyline fill="none" stroke="#ff0000" stroke-width="3" points="872.5,-1212 948.5,-1212 "/>
+<text text-anchor="middle" x="910.5" y="-1186.8" font-family="Times,serif" font-size="14.00" fill="#000000">Física II</text>
+<polyline fill="none" stroke="#ff0000" stroke-width="3" points="948.5,-1169 948.5,-1255 "/>
+<text text-anchor="middle" x="961" y="-1237.3" font-family="Times,serif" font-size="14.00" fill="#000000">4</text>
+<polyline fill="none" stroke="#ff0000" stroke-width="3" points="948.5,-1227 973.5,-1227 "/>
+<text text-anchor="middle" x="961" y="-1208.8" font-family="Times,serif" font-size="14.00" fill="#000000">0</text>
+<polyline fill="none" stroke="#ff0000" stroke-width="3" points="948.5,-1198 973.5,-1198 "/>
+<text text-anchor="middle" x="961" y="-1179.8" font-family="Times,serif" font-size="14.00" fill="#000000">8</text>
+</g>
+<!-- CB0100T&#45;&gt;CB0101T -->
+<g id="edge21" class="edge">
+<title>CB0100T&#45;&gt;CB0101T</title>
+<path fill="none" stroke="#000000" d="M891.9635,-1314.9848C896.6658,-1299.3817 902.0348,-1281.5665 906.9701,-1265.1902"/>
+<polygon fill="#000000" stroke="#000000" points="910.4427,-1265.7968 909.9771,-1255.2122 903.7404,-1263.7769 910.4427,-1265.7968"/>
+</g>
+<!-- CS0000T -->
+<g id="node16" class="node">
+<title>CS0000T</title>
+<polygon fill="none" stroke="#0000ff" stroke-width="3" points="1741.5,-1315 1741.5,-1401 1842.5,-1401 1842.5,-1315 1741.5,-1315"/>
+<text text-anchor="middle" x="1779" y="-1375.8" font-family="Times,serif" font-size="14.00" fill="#000000">CS0000&#45;T</text>
+<polyline fill="none" stroke="#0000ff" stroke-width="3" points="1741.5,-1358 1816.5,-1358 "/>
+<text text-anchor="middle" x="1779" y="-1332.8" font-family="Times,serif" font-size="14.00" fill="#000000">Inglés I</text>
+<polyline fill="none" stroke="#0000ff" stroke-width="3" points="1816.5,-1315 1816.5,-1401 "/>
+<text text-anchor="middle" x="1829.5" y="-1383.3" font-family="Times,serif" font-size="14.00" fill="#000000">3</text>
+<polyline fill="none" stroke="#0000ff" stroke-width="3" points="1816.5,-1373 1842.5,-1373 "/>
+<text text-anchor="middle" x="1829.5" y="-1354.8" font-family="Times,serif" font-size="14.00" fill="#000000">0</text>
+<polyline fill="none" stroke="#0000ff" stroke-width="3" points="1816.5,-1344 1842.5,-1344 "/>
+<text text-anchor="middle" x="1829.5" y="-1325.8" font-family="Times,serif" font-size="14.00" fill="#000000">6</text>
+</g>
+<!-- CS0001T -->
+<g id="node23" class="node">
+<title>CS0001T</title>
+<polygon fill="none" stroke="#0000ff" stroke-width="3" points="1741.5,-1169 1741.5,-1255 1842.5,-1255 1842.5,-1169 1741.5,-1169"/>
+<text text-anchor="middle" x="1779" y="-1229.8" font-family="Times,serif" font-size="14.00" fill="#000000">CS0001&#45;T</text>
+<polyline fill="none" stroke="#0000ff" stroke-width="3" points="1741.5,-1212 1816.5,-1212 "/>
+<text text-anchor="middle" x="1779" y="-1186.8" font-family="Times,serif" font-size="14.00" fill="#000000">Inglés II</text>
+<polyline fill="none" stroke="#0000ff" stroke-width="3" points="1816.5,-1169 1816.5,-1255 "/>
+<text text-anchor="middle" x="1829.5" y="-1237.3" font-family="Times,serif" font-size="14.00" fill="#000000">3</text>
+<polyline fill="none" stroke="#0000ff" stroke-width="3" points="1816.5,-1227 1842.5,-1227 "/>
+<text text-anchor="middle" x="1829.5" y="-1208.8" font-family="Times,serif" font-size="14.00" fill="#000000">0</text>
+<polyline fill="none" stroke="#0000ff" stroke-width="3" points="1816.5,-1198 1842.5,-1198 "/>
+<text text-anchor="middle" x="1829.5" y="-1179.8" font-family="Times,serif" font-size="14.00" fill="#000000">6</text>
+</g>
+<!-- CS0000T&#45;&gt;CS0001T -->
+<g id="edge53" class="edge">
+<title>CS0000T&#45;&gt;CS0001T</title>
+<path fill="none" stroke="#000000" d="M1792,-1314.9848C1792,-1299.5289 1792,-1281.9024 1792,-1265.654"/>
+<polygon fill="#000000" stroke="#000000" points="1795.5001,-1265.2122 1792,-1255.2122 1788.5001,-1265.2123 1795.5001,-1265.2122"/>
+</g>
+<!-- OC0000L -->
+<g id="node17" class="node">
+<title>OC0000L</title>
+<polygon fill="none" stroke="#a52a2a" stroke-width="3" points="1190,-1315 1190,-1401 1324,-1401 1324,-1315 1190,-1315"/>
+<text text-anchor="middle" x="1245.5" y="-1383.3" font-family="Times,serif" font-size="14.00" fill="#000000">OC0000&#45;L</text>
+<polyline fill="none" stroke="#a52a2a" stroke-width="3" points="1190,-1373 1301,-1373 "/>
+<text text-anchor="middle" x="1245.5" y="-1355.3" font-family="Times,serif" font-size="14.00" fill="#000000">Laboratorio</text>
+<text text-anchor="middle" x="1245.5" y="-1340.3" font-family="Times,serif" font-size="14.00" fill="#000000">de Herramientas</text>
+<text text-anchor="middle" x="1245.5" y="-1325.3" font-family="Times,serif" font-size="14.00" fill="#000000">Computacionales</text>
+<polyline fill="none" stroke="#a52a2a" stroke-width="3" points="1301,-1315 1301,-1401 "/>
+<text text-anchor="middle" x="1312.5" y="-1383.3" font-family="Times,serif" font-size="14.00" fill="#000000">0</text>
+<polyline fill="none" stroke="#a52a2a" stroke-width="3" points="1301,-1373 1324,-1373 "/>
+<text text-anchor="middle" x="1312.5" y="-1354.8" font-family="Times,serif" font-size="14.00" fill="#000000">2</text>
+<polyline fill="none" stroke="#a52a2a" stroke-width="3" points="1301,-1344 1324,-1344 "/>
+<text text-anchor="middle" x="1312.5" y="-1325.8" font-family="Times,serif" font-size="14.00" fill="#000000">4</text>
+</g>
+<!-- CI0000T -->
+<g id="node28" class="node">
+<title>CI0000T</title>
+<polygon fill="none" stroke="#00ff00" stroke-width="3" points="1187,-1169 1187,-1255 1323,-1255 1323,-1169 1187,-1169"/>
+<text text-anchor="middle" x="1243.5" y="-1233.8" font-family="Times,serif" font-size="14.00" fill="#000000">CI0000&#45;T</text>
+<polyline fill="none" stroke="#00ff00" stroke-width="3" points="1187,-1220 1300,-1220 "/>
+<text text-anchor="middle" x="1243.5" y="-1198.3" font-family="Times,serif" font-size="14.00" fill="#000000">Programación</text>
+<text text-anchor="middle" x="1243.5" y="-1183.3" font-family="Times,serif" font-size="14.00" fill="#000000">de Computadoras</text>
+<polyline fill="none" stroke="#00ff00" stroke-width="3" points="1300,-1169 1300,-1255 "/>
+<text text-anchor="middle" x="1311.5" y="-1237.3" font-family="Times,serif" font-size="14.00" fill="#000000">3</text>
+<polyline fill="none" stroke="#00ff00" stroke-width="3" points="1300,-1227 1323,-1227 "/>
+<text text-anchor="middle" x="1311.5" y="-1208.8" font-family="Times,serif" font-size="14.00" fill="#000000">0</text>
+<polyline fill="none" stroke="#00ff00" stroke-width="3" points="1300,-1198 1323,-1198 "/>
+<text text-anchor="middle" x="1311.5" y="-1179.8" font-family="Times,serif" font-size="14.00" fill="#000000">6</text>
+</g>
+<!-- OC0000L&#45;&gt;CI0000T -->
+<g id="edge62" class="edge">
+<title>OC0000L&#45;&gt;CI0000T</title>
+<path fill="none" stroke="#000000" d="M1256.4108,-1314.9848C1256.199,-1299.5289 1255.9576,-1281.9024 1255.735,-1265.654"/>
+<polygon fill="#000000" stroke="#000000" points="1259.2287,-1265.1633 1255.5919,-1255.2122 1252.2293,-1265.2593 1259.2287,-1265.1633"/>
+</g>
+<!-- CB0500T -->
+<g id="node18" class="node">
+<title>CB0500T</title>
+<polygon fill="none" stroke="#ff0000" stroke-width="3" points="1070.5,-1315 1070.5,-1401 1171.5,-1401 1171.5,-1315 1070.5,-1315"/>
+<text text-anchor="middle" x="1108.5" y="-1375.8" font-family="Times,serif" font-size="14.00" fill="#000000">CB0500&#45;T</text>
+<polyline fill="none" stroke="#ff0000" stroke-width="3" points="1070.5,-1358 1146.5,-1358 "/>
+<text text-anchor="middle" x="1108.5" y="-1332.8" font-family="Times,serif" font-size="14.00" fill="#000000">Química</text>
+<polyline fill="none" stroke="#ff0000" stroke-width="3" points="1146.5,-1315 1146.5,-1401 "/>
+<text text-anchor="middle" x="1159" y="-1383.3" font-family="Times,serif" font-size="14.00" fill="#000000">3</text>
+<polyline fill="none" stroke="#ff0000" stroke-width="3" points="1146.5,-1373 1171.5,-1373 "/>
+<text text-anchor="middle" x="1159" y="-1354.8" font-family="Times,serif" font-size="14.00" fill="#000000">0</text>
+<polyline fill="none" stroke="#ff0000" stroke-width="3" points="1146.5,-1344 1171.5,-1344 "/>
+<text text-anchor="middle" x="1159" y="-1325.8" font-family="Times,serif" font-size="14.00" fill="#000000">6</text>
+</g>
+<!-- CB0500T&#45;&gt;CB0501T -->
+<g id="edge31" class="edge">
+<title>CB0500T&#45;&gt;CB0501T</title>
+<path fill="none" stroke="#000000" d="M1110.2986,-1314.7486C1097.4383,-1262.7714 1075.8684,-1175.5933 1062.0452,-1119.7242"/>
+<polygon fill="#000000" stroke="#000000" points="1065.442,-1118.8805 1059.6426,-1110.0139 1058.6469,-1120.5618 1065.442,-1118.8805"/>
+</g>
+<!-- OC0100T -->
+<g id="node19" class="node">
+<title>OC0100T</title>
+<polygon fill="none" stroke="#a52a2a" stroke-width="3" points="1860.5,-1315 1860.5,-1401 1961.5,-1401 1961.5,-1315 1860.5,-1315"/>
+<text text-anchor="middle" x="1898.5" y="-1379.8" font-family="Times,serif" font-size="14.00" fill="#000000">OC0100&#45;T</text>
+<polyline fill="none" stroke="#a52a2a" stroke-width="3" points="1860.5,-1366 1936.5,-1366 "/>
+<text text-anchor="middle" x="1898.5" y="-1344.3" font-family="Times,serif" font-size="14.00" fill="#000000">Técnicas</text>
+<text text-anchor="middle" x="1898.5" y="-1329.3" font-family="Times,serif" font-size="14.00" fill="#000000">de Estudio</text>
+<polyline fill="none" stroke="#a52a2a" stroke-width="3" points="1936.5,-1315 1936.5,-1401 "/>
+<text text-anchor="middle" x="1949" y="-1383.3" font-family="Times,serif" font-size="14.00" fill="#000000">2</text>
+<polyline fill="none" stroke="#a52a2a" stroke-width="3" points="1936.5,-1373 1961.5,-1373 "/>
+<text text-anchor="middle" x="1949" y="-1354.8" font-family="Times,serif" font-size="14.00" fill="#000000">0</text>
+<polyline fill="none" stroke="#a52a2a" stroke-width="3" points="1936.5,-1344 1961.5,-1344 "/>
+<text text-anchor="middle" x="1949" y="-1325.8" font-family="Times,serif" font-size="14.00" fill="#000000">4</text>
+</g>
+<!-- CB0002T -->
+<g id="node29" class="node">
+<title>CB0002T</title>
+<polygon fill="none" stroke="#ff0000" stroke-width="3" points="340,-1024 340,-1110 446,-1110 446,-1024 340,-1024"/>
+<text text-anchor="middle" x="378" y="-1084.8" font-family="Times,serif" font-size="14.00" fill="#000000">CB0002&#45;T</text>
+<polyline fill="none" stroke="#ff0000" stroke-width="3" points="340,-1067 416,-1067 "/>
+<text text-anchor="middle" x="378" y="-1041.8" font-family="Times,serif" font-size="14.00" fill="#000000">Cálculo III</text>
+<polyline fill="none" stroke="#ff0000" stroke-width="3" points="416,-1024 416,-1110 "/>
+<text text-anchor="middle" x="431" y="-1092.3" font-family="Times,serif" font-size="14.00" fill="#000000">5</text>
+<polyline fill="none" stroke="#ff0000" stroke-width="3" points="416,-1082 446,-1082 "/>
+<text text-anchor="middle" x="431" y="-1063.8" font-family="Times,serif" font-size="14.00" fill="#000000">0</text>
+<polyline fill="none" stroke="#ff0000" stroke-width="3" points="416,-1053 446,-1053 "/>
+<text text-anchor="middle" x="431" y="-1034.8" font-family="Times,serif" font-size="14.00" fill="#000000">10</text>
+</g>
+<!-- CB0001T&#45;&gt;CB0002T -->
+<g id="edge14" class="edge">
+<title>CB0001T&#45;&gt;CB0002T</title>
+<path fill="none" stroke="#000000" d="M365.5957,-1168.8878C369.7236,-1153.5404 374.4204,-1136.0781 378.7453,-1119.9984"/>
+<polygon fill="#000000" stroke="#000000" points="382.1641,-1120.7624 381.3816,-1110.1965 375.4043,-1118.9442 382.1641,-1120.7624"/>
+</g>
+<!-- CB0001T&#45;&gt;CB0600T -->
+<g id="edge16" class="edge">
+<title>CB0001T&#45;&gt;CB0600T</title>
+<path fill="none" stroke="#000000" d="M326.4414,-1168.9151C316.2357,-1151.3632 305.3682,-1130.5203 298,-1110.5 279.2841,-1059.6469 252.4831,-910.4835 238.788,-829.9758"/>
+<polygon fill="#000000" stroke="#000000" points="242.2253,-829.3107 237.1044,-820.0357 235.3236,-830.4798 242.2253,-829.3107"/>
+</g>
+<!-- IA7800T -->
+<g id="node64" class="node">
+<title>IA7800T</title>
+<polygon fill="none" stroke="#ffa500" stroke-width="3" points="929,-444 929,-530 1041,-530 1041,-444 929,-444"/>
+<text text-anchor="middle" x="973.5" y="-512.3" font-family="Times,serif" font-size="14.00" fill="#000000">IA7800&#45;T</text>
+<polyline fill="none" stroke="#ffa500" stroke-width="3" points="929,-502 1018,-502 "/>
+<text text-anchor="middle" x="973.5" y="-484.3" font-family="Times,serif" font-size="14.00" fill="#000000">Investigación</text>
+<text text-anchor="middle" x="973.5" y="-469.3" font-family="Times,serif" font-size="14.00" fill="#000000">de</text>
+<text text-anchor="middle" x="973.5" y="-454.3" font-family="Times,serif" font-size="14.00" fill="#000000">Operaciones</text>
+<polyline fill="none" stroke="#ffa500" stroke-width="3" points="1018,-444 1018,-530 "/>
+<text text-anchor="middle" x="1029.5" y="-512.3" font-family="Times,serif" font-size="14.00" fill="#000000">3</text>
+<polyline fill="none" stroke="#ffa500" stroke-width="3" points="1018,-502 1041,-502 "/>
+<text text-anchor="middle" x="1029.5" y="-483.8" font-family="Times,serif" font-size="14.00" fill="#000000">0</text>
+<polyline fill="none" stroke="#ffa500" stroke-width="3" points="1018,-473 1041,-473 "/>
+<text text-anchor="middle" x="1029.5" y="-454.8" font-family="Times,serif" font-size="14.00" fill="#000000">6</text>
+</g>
+<!-- CB0001T&#45;&gt;IA7800T -->
+<g id="edge15" class="edge">
+<title>CB0001T&#45;&gt;IA7800T</title>
+<path fill="none" stroke="#000000" d="M342.0022,-1168.8971C337.6022,-1150.9877 333.1697,-1129.8927 331,-1110.5 312.3695,-943.9811 298.247,-897.4142 333,-733.5 347.537,-664.9356 340.0002,-631.9444 395,-588.5 475.3835,-525.0051 781.7721,-499.1136 918.4703,-490.5619"/>
+<polygon fill="#000000" stroke="#000000" points="919.0346,-494.034 928.8017,-489.9285 918.6062,-487.0471 919.0346,-494.034"/>
+</g>
+<!-- CI0101T -->
+<g id="node30" class="node">
+<title>CI0101T</title>
+<polygon fill="none" stroke="#00ff00" stroke-width="3" points="464,-1024 464,-1110 572,-1110 572,-1024 464,-1024"/>
+<text text-anchor="middle" x="506.5" y="-1088.8" font-family="Times,serif" font-size="14.00" fill="#000000">CI0101&#45;T</text>
+<polyline fill="none" stroke="#00ff00" stroke-width="3" points="464,-1075 549,-1075 "/>
+<text text-anchor="middle" x="506.5" y="-1053.3" font-family="Times,serif" font-size="14.00" fill="#000000">Electrónica</text>
+<text text-anchor="middle" x="506.5" y="-1038.3" font-family="Times,serif" font-size="14.00" fill="#000000">Analógica II</text>
+<polyline fill="none" stroke="#00ff00" stroke-width="3" points="549,-1024 549,-1110 "/>
+<text text-anchor="middle" x="560.5" y="-1092.3" font-family="Times,serif" font-size="14.00" fill="#000000">3</text>
+<polyline fill="none" stroke="#00ff00" stroke-width="3" points="549,-1082 572,-1082 "/>
+<text text-anchor="middle" x="560.5" y="-1063.8" font-family="Times,serif" font-size="14.00" fill="#000000">0</text>
+<polyline fill="none" stroke="#00ff00" stroke-width="3" points="549,-1053 572,-1053 "/>
+<text text-anchor="middle" x="560.5" y="-1034.8" font-family="Times,serif" font-size="14.00" fill="#000000">6</text>
+</g>
+<!-- CI0100T&#45;&gt;CI0101T -->
+<g id="edge41" class="edge">
+<title>CI0100T&#45;&gt;CI0101T</title>
+<path fill="none" stroke="#000000" d="M546.107,-1168.8878C541.8732,-1153.5404 537.056,-1136.0781 532.6202,-1119.9984"/>
+<polygon fill="#000000" stroke="#000000" points="535.9496,-1118.9056 529.9163,-1110.1965 529.2017,-1120.7672 535.9496,-1118.9056"/>
+</g>
+<!-- CI0300T -->
+<g id="node40" class="node">
+<title>CI0300T</title>
+<polygon fill="none" stroke="#00ff00" stroke-width="3" points="493.5,-879 493.5,-965 594.5,-965 594.5,-879 493.5,-879"/>
+<text text-anchor="middle" x="532.5" y="-943.8" font-family="Times,serif" font-size="14.00" fill="#000000">CI0300&#45;T</text>
+<polyline fill="none" stroke="#00ff00" stroke-width="3" points="493.5,-930 571.5,-930 "/>
+<text text-anchor="middle" x="532.5" y="-908.3" font-family="Times,serif" font-size="14.00" fill="#000000">Electrónica</text>
+<text text-anchor="middle" x="532.5" y="-893.3" font-family="Times,serif" font-size="14.00" fill="#000000">Digital I</text>
+<polyline fill="none" stroke="#00ff00" stroke-width="3" points="571.5,-879 571.5,-965 "/>
+<text text-anchor="middle" x="583" y="-947.3" font-family="Times,serif" font-size="14.00" fill="#000000">4</text>
+<polyline fill="none" stroke="#00ff00" stroke-width="3" points="571.5,-937 594.5,-937 "/>
+<text text-anchor="middle" x="583" y="-918.8" font-family="Times,serif" font-size="14.00" fill="#000000">0</text>
+<polyline fill="none" stroke="#00ff00" stroke-width="3" points="571.5,-908 594.5,-908 "/>
+<text text-anchor="middle" x="583" y="-889.8" font-family="Times,serif" font-size="14.00" fill="#000000">8</text>
+</g>
+<!-- CI0100T&#45;&gt;CI0300T -->
+<g id="edge42" class="edge">
+<title>CI0100T&#45;&gt;CI0300T</title>
+<path fill="none" stroke="#000000" d="M570.5257,-1168.7581C579.9075,-1130.4257 589.7428,-1073.0108 581,-1023.5 578.11,-1007.1338 572.7878,-989.9369 567.0634,-974.4452"/>
+<polygon fill="#000000" stroke="#000000" points="570.3081,-973.1311 563.4653,-965.0425 563.7704,-975.6329 570.3081,-973.1311"/>
+</g>
+<!-- CB0102T -->
+<g id="node36" class="node">
+<title>CB0102T</title>
+<polygon fill="none" stroke="#ff0000" stroke-width="3" points="666.5,-1024 666.5,-1110 809.5,-1110 809.5,-1024 666.5,-1024"/>
+<text text-anchor="middle" x="726.5" y="-1088.8" font-family="Times,serif" font-size="14.00" fill="#000000">CB0102&#45;T</text>
+<polyline fill="none" stroke="#ff0000" stroke-width="3" points="666.5,-1075 786.5,-1075 "/>
+<text text-anchor="middle" x="726.5" y="-1053.3" font-family="Times,serif" font-size="14.00" fill="#000000">Teoría</text>
+<text text-anchor="middle" x="726.5" y="-1038.3" font-family="Times,serif" font-size="14.00" fill="#000000">Electromagnética I</text>
+<polyline fill="none" stroke="#ff0000" stroke-width="3" points="786.5,-1024 786.5,-1110 "/>
+<text text-anchor="middle" x="798" y="-1092.3" font-family="Times,serif" font-size="14.00" fill="#000000">4</text>
+<polyline fill="none" stroke="#ff0000" stroke-width="3" points="786.5,-1082 809.5,-1082 "/>
+<text text-anchor="middle" x="798" y="-1063.8" font-family="Times,serif" font-size="14.00" fill="#000000">0</text>
+<polyline fill="none" stroke="#ff0000" stroke-width="3" points="786.5,-1053 809.5,-1053 "/>
+<text text-anchor="middle" x="798" y="-1034.8" font-family="Times,serif" font-size="14.00" fill="#000000">8</text>
+</g>
+<!-- CB0101T&#45;&gt;CB0102T -->
+<g id="edge22" class="edge">
+<title>CB0101T&#45;&gt;CB0102T</title>
+<path fill="none" stroke="#000000" d="M872.4479,-1172.3781C850.4371,-1155.1264 824.4059,-1134.7235 801.1396,-1116.4878"/>
+<polygon fill="#000000" stroke="#000000" points="803.0662,-1113.5509 793.0365,-1110.1367 798.748,-1119.0603 803.0662,-1113.5509"/>
+</g>
+<!-- CB0101T&#45;&gt;CB0501T -->
+<g id="edge23" class="edge">
+<title>CB0101T&#45;&gt;CB0501T</title>
+<path fill="none" stroke="#000000" d="M960.463,-1168.8878C974.3026,-1152.9613 990.1214,-1134.7572 1004.5227,-1118.1842"/>
+<polygon fill="#000000" stroke="#000000" points="1007.5464,-1120.0405 1011.4638,-1110.1965 1002.2626,-1115.449 1007.5464,-1120.0405"/>
+</g>
+<!-- CS0002T -->
+<g id="node31" class="node">
+<title>CS0002T</title>
+<polygon fill="none" stroke="#0000ff" stroke-width="3" points="1741.5,-1024 1741.5,-1110 1842.5,-1110 1842.5,-1024 1741.5,-1024"/>
+<text text-anchor="middle" x="1779" y="-1084.8" font-family="Times,serif" font-size="14.00" fill="#000000">CS0002&#45;T</text>
+<polyline fill="none" stroke="#0000ff" stroke-width="3" points="1741.5,-1067 1816.5,-1067 "/>
+<text text-anchor="middle" x="1779" y="-1041.8" font-family="Times,serif" font-size="14.00" fill="#000000">Inglés III</text>
+<polyline fill="none" stroke="#0000ff" stroke-width="3" points="1816.5,-1024 1816.5,-1110 "/>
+<text text-anchor="middle" x="1829.5" y="-1092.3" font-family="Times,serif" font-size="14.00" fill="#000000">3</text>
+<polyline fill="none" stroke="#0000ff" stroke-width="3" points="1816.5,-1082 1842.5,-1082 "/>
+<text text-anchor="middle" x="1829.5" y="-1063.8" font-family="Times,serif" font-size="14.00" fill="#000000">0</text>
+<polyline fill="none" stroke="#0000ff" stroke-width="3" points="1816.5,-1053 1842.5,-1053 "/>
+<text text-anchor="middle" x="1829.5" y="-1034.8" font-family="Times,serif" font-size="14.00" fill="#000000">6</text>
+</g>
+<!-- CS0001T&#45;&gt;CS0002T -->
+<g id="edge54" class="edge">
+<title>CS0001T&#45;&gt;CS0002T</title>
+<path fill="none" stroke="#000000" d="M1792,-1168.8878C1792,-1153.6852 1792,-1136.4074 1792,-1120.4539"/>
+<polygon fill="#000000" stroke="#000000" points="1795.5001,-1120.1964 1792,-1110.1965 1788.5001,-1120.1965 1795.5001,-1120.1964"/>
+</g>
+<!-- CI0100L -->
+<g id="node24" class="node">
+<title>CI0100L</title>
+<polygon fill="none" stroke="#00ff00" stroke-width="3" points="1861,-1169 1861,-1255 1979,-1255 1979,-1169 1861,-1169"/>
+<text text-anchor="middle" x="1908.5" y="-1237.3" font-family="Times,serif" font-size="14.00" fill="#000000">CI0100&#45;L</text>
+<polyline fill="none" stroke="#00ff00" stroke-width="3" points="1861,-1227 1956,-1227 "/>
+<text text-anchor="middle" x="1908.5" y="-1209.3" font-family="Times,serif" font-size="14.00" fill="#000000">Laboratorio</text>
+<text text-anchor="middle" x="1908.5" y="-1194.3" font-family="Times,serif" font-size="14.00" fill="#000000">de Electrónica</text>
+<text text-anchor="middle" x="1908.5" y="-1179.3" font-family="Times,serif" font-size="14.00" fill="#000000">Analógica I</text>
+<polyline fill="none" stroke="#00ff00" stroke-width="3" points="1956,-1169 1956,-1255 "/>
+<text text-anchor="middle" x="1967.5" y="-1237.3" font-family="Times,serif" font-size="14.00" fill="#000000">0</text>
+<polyline fill="none" stroke="#00ff00" stroke-width="3" points="1956,-1227 1979,-1227 "/>
+<text text-anchor="middle" x="1967.5" y="-1208.8" font-family="Times,serif" font-size="14.00" fill="#000000">2</text>
+<polyline fill="none" stroke="#00ff00" stroke-width="3" points="1956,-1198 1979,-1198 "/>
+<text text-anchor="middle" x="1967.5" y="-1179.8" font-family="Times,serif" font-size="14.00" fill="#000000">4</text>
+</g>
+<!-- CB0101L -->
+<g id="node25" class="node">
+<title>CB0101L</title>
+<polygon fill="none" stroke="#ff0000" stroke-width="3" points="1997.5,-1169 1997.5,-1255 2100.5,-1255 2100.5,-1169 1997.5,-1169"/>
+<text text-anchor="middle" x="2037.5" y="-1233.8" font-family="Times,serif" font-size="14.00" fill="#000000">CB0101&#45;L</text>
+<polyline fill="none" stroke="#ff0000" stroke-width="3" points="1997.5,-1220 2077.5,-1220 "/>
+<text text-anchor="middle" x="2037.5" y="-1198.3" font-family="Times,serif" font-size="14.00" fill="#000000">Laboratorio</text>
+<text text-anchor="middle" x="2037.5" y="-1183.3" font-family="Times,serif" font-size="14.00" fill="#000000">de Física II</text>
+<polyline fill="none" stroke="#ff0000" stroke-width="3" points="2077.5,-1169 2077.5,-1255 "/>
+<text text-anchor="middle" x="2089" y="-1237.3" font-family="Times,serif" font-size="14.00" fill="#000000">0</text>
+<polyline fill="none" stroke="#ff0000" stroke-width="3" points="2077.5,-1227 2100.5,-1227 "/>
+<text text-anchor="middle" x="2089" y="-1208.8" font-family="Times,serif" font-size="14.00" fill="#000000">1</text>
+<polyline fill="none" stroke="#ff0000" stroke-width="3" points="2077.5,-1198 2100.5,-1198 "/>
+<text text-anchor="middle" x="2089" y="-1179.8" font-family="Times,serif" font-size="14.00" fill="#000000">2</text>
+</g>
+<!-- CI0000L -->
+<g id="node26" class="node">
+<title>CI0000L</title>
+<polygon fill="none" stroke="#00ff00" stroke-width="3" points="2119,-1169 2119,-1255 2255,-1255 2255,-1169 2119,-1169"/>
+<text text-anchor="middle" x="2175.5" y="-1237.3" font-family="Times,serif" font-size="14.00" fill="#000000">CI0000&#45;L</text>
+<polyline fill="none" stroke="#00ff00" stroke-width="3" points="2119,-1227 2232,-1227 "/>
+<text text-anchor="middle" x="2175.5" y="-1209.3" font-family="Times,serif" font-size="14.00" fill="#000000">Laboratorio</text>
+<text text-anchor="middle" x="2175.5" y="-1194.3" font-family="Times,serif" font-size="14.00" fill="#000000">de Programación</text>
+<text text-anchor="middle" x="2175.5" y="-1179.3" font-family="Times,serif" font-size="14.00" fill="#000000">de Computadoras</text>
+<polyline fill="none" stroke="#00ff00" stroke-width="3" points="2232,-1169 2232,-1255 "/>
+<text text-anchor="middle" x="2243.5" y="-1237.3" font-family="Times,serif" font-size="14.00" fill="#000000">0</text>
+<polyline fill="none" stroke="#00ff00" stroke-width="3" points="2232,-1227 2255,-1227 "/>
+<text text-anchor="middle" x="2243.5" y="-1208.8" font-family="Times,serif" font-size="14.00" fill="#000000">2</text>
+<polyline fill="none" stroke="#00ff00" stroke-width="3" points="2232,-1198 2255,-1198 "/>
+<text text-anchor="middle" x="2243.5" y="-1179.8" font-family="Times,serif" font-size="14.00" fill="#000000">4</text>
+</g>
+<!-- IA7000T -->
+<g id="node27" class="node">
+<title>IA7000T</title>
+<polygon fill="none" stroke="#ffa500" stroke-width="3" points="1565.5,-1169 1565.5,-1255 1666.5,-1255 1666.5,-1169 1565.5,-1169"/>
+<text text-anchor="middle" x="1602.5" y="-1229.8" font-family="Times,serif" font-size="14.00" fill="#000000">IA7000&#45;T</text>
+<polyline fill="none" stroke="#ffa500" stroke-width="3" points="1565.5,-1212 1639.5,-1212 "/>
+<text text-anchor="middle" x="1602.5" y="-1186.8" font-family="Times,serif" font-size="14.00" fill="#000000">Lógica</text>
+<polyline fill="none" stroke="#ffa500" stroke-width="3" points="1639.5,-1169 1639.5,-1255 "/>
+<text text-anchor="middle" x="1653" y="-1237.3" font-family="Times,serif" font-size="14.00" fill="#000000">3</text>
+<polyline fill="none" stroke="#ffa500" stroke-width="3" points="1639.5,-1227 1666.5,-1227 "/>
+<text text-anchor="middle" x="1653" y="-1208.8" font-family="Times,serif" font-size="14.00" fill="#000000">0</text>
+<polyline fill="none" stroke="#ffa500" stroke-width="3" points="1639.5,-1198 1666.5,-1198 "/>
+<text text-anchor="middle" x="1653" y="-1179.8" font-family="Times,serif" font-size="14.00" fill="#000000">6</text>
+</g>
+<!-- CI7000T -->
+<g id="node45" class="node">
+<title>CI7000T</title>
+<polygon fill="none" stroke="#00ff00" stroke-width="3" points="1613,-879 1613,-965 1723,-965 1723,-879 1613,-879"/>
+<text text-anchor="middle" x="1656.5" y="-943.8" font-family="Times,serif" font-size="14.00" fill="#000000">CI7000&#45;T</text>
+<polyline fill="none" stroke="#00ff00" stroke-width="3" points="1613,-930 1700,-930 "/>
+<text text-anchor="middle" x="1656.5" y="-908.3" font-family="Times,serif" font-size="14.00" fill="#000000">Matemáticas</text>
+<text text-anchor="middle" x="1656.5" y="-893.3" font-family="Times,serif" font-size="14.00" fill="#000000">Discretas</text>
+<polyline fill="none" stroke="#00ff00" stroke-width="3" points="1700,-879 1700,-965 "/>
+<text text-anchor="middle" x="1711.5" y="-947.3" font-family="Times,serif" font-size="14.00" fill="#000000">4</text>
+<polyline fill="none" stroke="#00ff00" stroke-width="3" points="1700,-937 1723,-937 "/>
+<text text-anchor="middle" x="1711.5" y="-918.8" font-family="Times,serif" font-size="14.00" fill="#000000">0</text>
+<polyline fill="none" stroke="#00ff00" stroke-width="3" points="1700,-908 1723,-908 "/>
+<text text-anchor="middle" x="1711.5" y="-889.8" font-family="Times,serif" font-size="14.00" fill="#000000">8</text>
+</g>
+<!-- IA7000T&#45;&gt;CI7000T -->
+<g id="edge59" class="edge">
+<title>IA7000T&#45;&gt;CI7000T</title>
+<path fill="none" stroke="#000000" d="M1623.7288,-1168.8972C1632.9709,-1117.3545 1648.4413,-1031.0773 1658.4302,-975.3701"/>
+<polygon fill="#000000" stroke="#000000" points="1661.9088,-975.8002 1660.2288,-965.3394 1655.0187,-974.5647 1661.9088,-975.8002"/>
+</g>
+<!-- IA7500T -->
+<g id="node63" class="node">
+<title>IA7500T</title>
+<polygon fill="none" stroke="#ffa500" stroke-width="3" points="1496.5,-444 1496.5,-530 1597.5,-530 1597.5,-444 1496.5,-444"/>
+<text text-anchor="middle" x="1533.5" y="-508.8" font-family="Times,serif" font-size="14.00" fill="#000000">IA7500&#45;T</text>
+<polyline fill="none" stroke="#ffa500" stroke-width="3" points="1496.5,-495 1570.5,-495 "/>
+<text text-anchor="middle" x="1533.5" y="-473.3" font-family="Times,serif" font-size="14.00" fill="#000000">Bases</text>
+<text text-anchor="middle" x="1533.5" y="-458.3" font-family="Times,serif" font-size="14.00" fill="#000000">de Datos</text>
+<polyline fill="none" stroke="#ffa500" stroke-width="3" points="1570.5,-444 1570.5,-530 "/>
+<text text-anchor="middle" x="1584" y="-512.3" font-family="Times,serif" font-size="14.00" fill="#000000">4</text>
+<polyline fill="none" stroke="#ffa500" stroke-width="3" points="1570.5,-502 1597.5,-502 "/>
+<text text-anchor="middle" x="1584" y="-483.8" font-family="Times,serif" font-size="14.00" fill="#000000">0</text>
+<polyline fill="none" stroke="#ffa500" stroke-width="3" points="1570.5,-473 1597.5,-473 "/>
+<text text-anchor="middle" x="1584" y="-454.8" font-family="Times,serif" font-size="14.00" fill="#000000">8</text>
+</g>
+<!-- IA7000T&#45;&gt;IA7500T -->
+<g id="edge58" class="edge">
+<title>IA7000T&#45;&gt;IA7500T</title>
+<path fill="none" stroke="#000000" d="M1608.4958,-1168.9173C1599.3212,-1112.4139 1585,-1010.1033 1585,-922 1585,-922 1585,-922 1585,-777 1585,-692.921 1581.4867,-671.6467 1569,-588.5 1566.6277,-572.7031 1563.2625,-555.6837 1559.8758,-540.18"/>
+<polygon fill="#000000" stroke="#000000" points="1563.2514,-539.2364 1557.6574,-530.2388 1556.4195,-540.7611 1563.2514,-539.2364"/>
+</g>
+<!-- CI0000T&#45;&gt;CB0300T -->
+<g id="edge38" class="edge">
+<title>CI0000T&#45;&gt;CB0300T</title>
+<path fill="none" stroke="#000000" d="M1186.7368,-1193.168C1131.0405,-1176.4684 1050.9216,-1149.3725 976.6049,-1110.4677"/>
+<polygon fill="#000000" stroke="#000000" points="978.0452,-1107.2695 967.5727,-1105.6645 974.7586,-1113.45 978.0452,-1107.2695"/>
+</g>
+<!-- CI7100T -->
+<g id="node41" class="node">
+<title>CI7100T</title>
+<polygon fill="none" stroke="#00ff00" stroke-width="3" points="1283.5,-879 1283.5,-965 1384.5,-965 1384.5,-879 1283.5,-879"/>
+<text text-anchor="middle" x="1322" y="-943.8" font-family="Times,serif" font-size="14.00" fill="#000000">CI7100&#45;T</text>
+<polyline fill="none" stroke="#00ff00" stroke-width="3" points="1283.5,-930 1360.5,-930 "/>
+<text text-anchor="middle" x="1322" y="-908.3" font-family="Times,serif" font-size="14.00" fill="#000000">Estructuras</text>
+<text text-anchor="middle" x="1322" y="-893.3" font-family="Times,serif" font-size="14.00" fill="#000000">de Datos</text>
+<polyline fill="none" stroke="#00ff00" stroke-width="3" points="1360.5,-879 1360.5,-965 "/>
+<text text-anchor="middle" x="1372.5" y="-947.3" font-family="Times,serif" font-size="14.00" fill="#000000">3</text>
+<polyline fill="none" stroke="#00ff00" stroke-width="3" points="1360.5,-937 1384.5,-937 "/>
+<text text-anchor="middle" x="1372.5" y="-918.8" font-family="Times,serif" font-size="14.00" fill="#000000">0</text>
+<polyline fill="none" stroke="#00ff00" stroke-width="3" points="1360.5,-908 1384.5,-908 "/>
+<text text-anchor="middle" x="1372.5" y="-889.8" font-family="Times,serif" font-size="14.00" fill="#000000">6</text>
+</g>
+<!-- CI0000T&#45;&gt;CI7100T -->
+<g id="edge35" class="edge">
+<title>CI0000T&#45;&gt;CI7100T</title>
+<path fill="none" stroke="#000000" d="M1266.7418,-1168.8972C1280.8119,-1117.2475 1304.3834,-1030.7191 1319.5556,-975.0238"/>
+<polygon fill="#000000" stroke="#000000" points="1322.9423,-975.9078 1322.1937,-965.3394 1316.1884,-974.0679 1322.9423,-975.9078"/>
+</g>
+<!-- CI7101T -->
+<g id="node42" class="node">
+<title>CI7101T</title>
+<polygon fill="none" stroke="#00ff00" stroke-width="3" points="1403,-879 1403,-965 1519,-965 1519,-879 1403,-879"/>
+<text text-anchor="middle" x="1449.5" y="-947.3" font-family="Times,serif" font-size="14.00" fill="#000000">CI7101&#45;T</text>
+<polyline fill="none" stroke="#00ff00" stroke-width="3" points="1403,-937 1496,-937 "/>
+<text text-anchor="middle" x="1449.5" y="-919.3" font-family="Times,serif" font-size="14.00" fill="#000000">Ingeniería</text>
+<text text-anchor="middle" x="1449.5" y="-904.3" font-family="Times,serif" font-size="14.00" fill="#000000">de</text>
+<text text-anchor="middle" x="1449.5" y="-889.3" font-family="Times,serif" font-size="14.00" fill="#000000">Programación</text>
+<polyline fill="none" stroke="#00ff00" stroke-width="3" points="1496,-879 1496,-965 "/>
+<text text-anchor="middle" x="1507.5" y="-947.3" font-family="Times,serif" font-size="14.00" fill="#000000">4</text>
+<polyline fill="none" stroke="#00ff00" stroke-width="3" points="1496,-937 1519,-937 "/>
+<text text-anchor="middle" x="1507.5" y="-918.8" font-family="Times,serif" font-size="14.00" fill="#000000">0</text>
+<polyline fill="none" stroke="#00ff00" stroke-width="3" points="1496,-908 1519,-908 "/>
+<text text-anchor="middle" x="1507.5" y="-889.8" font-family="Times,serif" font-size="14.00" fill="#000000">8</text>
+</g>
+<!-- CI0000T&#45;&gt;CI7101T -->
+<g id="edge37" class="edge">
+<title>CI0000T&#45;&gt;CI7101T</title>
+<path fill="none" stroke="#000000" d="M1285.6178,-1168.8972C1322.6108,-1116.8198 1384.7917,-1029.2836 1424.3132,-973.6464"/>
+<polygon fill="#000000" stroke="#000000" points="1427.2763,-975.5188 1430.2141,-965.3394 1421.5696,-971.465 1427.2763,-975.5188"/>
+</g>
+<!-- IA7200T -->
+<g id="node58" class="node">
+<title>IA7200T</title>
+<polygon fill="none" stroke="#ffa500" stroke-width="3" points="1056.5,-589 1056.5,-675 1159.5,-675 1159.5,-589 1056.5,-589"/>
+<text text-anchor="middle" x="1096.5" y="-649.8" font-family="Times,serif" font-size="14.00" fill="#000000">IA7200&#45;T</text>
+<polyline fill="none" stroke="#ffa500" stroke-width="3" points="1056.5,-632 1136.5,-632 "/>
+<text text-anchor="middle" x="1096.5" y="-606.8" font-family="Times,serif" font-size="14.00" fill="#000000">Graficación</text>
+<polyline fill="none" stroke="#ffa500" stroke-width="3" points="1136.5,-589 1136.5,-675 "/>
+<text text-anchor="middle" x="1148" y="-657.3" font-family="Times,serif" font-size="14.00" fill="#000000">3</text>
+<polyline fill="none" stroke="#ffa500" stroke-width="3" points="1136.5,-647 1159.5,-647 "/>
+<text text-anchor="middle" x="1148" y="-628.8" font-family="Times,serif" font-size="14.00" fill="#000000">0</text>
+<polyline fill="none" stroke="#ffa500" stroke-width="3" points="1136.5,-618 1159.5,-618 "/>
+<text text-anchor="middle" x="1148" y="-599.8" font-family="Times,serif" font-size="14.00" fill="#000000">6</text>
+</g>
+<!-- CI0000T&#45;&gt;IA7200T -->
+<g id="edge36" class="edge">
+<title>CI0000T&#45;&gt;IA7200T</title>
+<path fill="none" stroke="#000000" d="M1228.9932,-1168.8693C1219.4592,-1151.3111 1209.4374,-1130.4758 1203,-1110.5 1151.0218,-949.2086 1188.6051,-897.5166 1146,-733.5 1141.8082,-717.3628 1135.9656,-700.2364 1130.1171,-684.739"/>
+<polygon fill="#000000" stroke="#000000" points="1133.3508,-683.3966 1126.4896,-675.3235 1126.8188,-685.9133 1133.3508,-683.3966"/>
+</g>
+<!-- IA7600T -->
+<g id="node67" class="node">
+<title>IA7600T</title>
+<polygon fill="none" stroke="#ffa500" stroke-width="3" points="1082,-444 1082,-530 1218,-530 1218,-444 1082,-444"/>
+<text text-anchor="middle" x="1138.5" y="-508.8" font-family="Times,serif" font-size="14.00" fill="#000000">IA7600&#45;T</text>
+<polyline fill="none" stroke="#ffa500" stroke-width="3" points="1082,-495 1195,-495 "/>
+<text text-anchor="middle" x="1138.5" y="-473.3" font-family="Times,serif" font-size="14.00" fill="#000000">Redes</text>
+<text text-anchor="middle" x="1138.5" y="-458.3" font-family="Times,serif" font-size="14.00" fill="#000000">de Computadoras</text>
+<polyline fill="none" stroke="#ffa500" stroke-width="3" points="1195,-444 1195,-530 "/>
+<text text-anchor="middle" x="1206.5" y="-512.3" font-family="Times,serif" font-size="14.00" fill="#000000">4</text>
+<polyline fill="none" stroke="#ffa500" stroke-width="3" points="1195,-502 1218,-502 "/>
+<text text-anchor="middle" x="1206.5" y="-483.8" font-family="Times,serif" font-size="14.00" fill="#000000">0</text>
+<polyline fill="none" stroke="#ffa500" stroke-width="3" points="1195,-473 1218,-473 "/>
+<text text-anchor="middle" x="1206.5" y="-454.8" font-family="Times,serif" font-size="14.00" fill="#000000">8</text>
+</g>
+<!-- CI0000T&#45;&gt;IA7600T -->
+<g id="edge39" class="edge">
+<title>CI0000T&#45;&gt;IA7600T</title>
+<path fill="none" stroke="#000000" d="M1245.8013,-1168.9942C1234.5551,-1112.574 1217,-1010.353 1217,-922 1217,-922 1217,-922 1217,-777 1217,-692.2495 1189.4992,-597.0602 1169.7356,-539.5944"/>
+<polygon fill="#000000" stroke="#000000" points="1172.9899,-538.2971 1166.39,-530.0091 1166.3809,-540.6039 1172.9899,-538.2971"/>
+</g>
+<!-- CI7200T -->
+<g id="node75" class="node">
+<title>CI7200T</title>
+<polygon fill="none" stroke="#00ff00" stroke-width="3" points="1016.5,-299 1016.5,-385 1117.5,-385 1117.5,-299 1016.5,-299"/>
+<text text-anchor="middle" x="1055" y="-363.8" font-family="Times,serif" font-size="14.00" fill="#000000">CI7200&#45;T</text>
+<polyline fill="none" stroke="#00ff00" stroke-width="3" points="1016.5,-350 1093.5,-350 "/>
+<text text-anchor="middle" x="1055" y="-328.3" font-family="Times,serif" font-size="14.00" fill="#000000">Sistemas</text>
+<text text-anchor="middle" x="1055" y="-313.3" font-family="Times,serif" font-size="14.00" fill="#000000">Operativos</text>
+<polyline fill="none" stroke="#00ff00" stroke-width="3" points="1093.5,-299 1093.5,-385 "/>
+<text text-anchor="middle" x="1105.5" y="-367.3" font-family="Times,serif" font-size="14.00" fill="#000000">4</text>
+<polyline fill="none" stroke="#00ff00" stroke-width="3" points="1093.5,-357 1117.5,-357 "/>
+<text text-anchor="middle" x="1105.5" y="-338.8" font-family="Times,serif" font-size="14.00" fill="#000000">0</text>
+<polyline fill="none" stroke="#00ff00" stroke-width="3" points="1093.5,-328 1117.5,-328 "/>
+<text text-anchor="middle" x="1105.5" y="-309.8" font-family="Times,serif" font-size="14.00" fill="#000000">8</text>
+</g>
+<!-- CI0000T&#45;&gt;CI7200T -->
+<g id="edge40" class="edge">
+<title>CI0000T&#45;&gt;CI7200T</title>
+<path fill="none" stroke="#ff0000" d="M1255,-1168.7637C1255,-1112.0942 1255,-1009.6042 1255,-922 1255,-922 1255,-922 1255,-632 1255,-547.303 1273.1658,-514.5091 1227,-443.5 1203.3805,-407.1701 1161.7042,-381.3535 1126.8079,-364.85"/>
+<polygon fill="#ff0000" stroke="#ff0000" points="1128.1821,-361.6298 1117.6328,-360.6479 1125.2672,-367.9941 1128.1821,-361.6298"/>
+</g>
+<!-- CB0003T -->
+<g id="node38" class="node">
+<title>CB0003T</title>
+<polygon fill="none" stroke="#ff0000" stroke-width="3" points="340.5,-879 340.5,-965 447.5,-965 447.5,-879 340.5,-879"/>
+<text text-anchor="middle" x="379" y="-939.8" font-family="Times,serif" font-size="14.00" fill="#000000">CB0003&#45;T</text>
+<polyline fill="none" stroke="#ff0000" stroke-width="3" points="340.5,-922 417.5,-922 "/>
+<text text-anchor="middle" x="379" y="-896.8" font-family="Times,serif" font-size="14.00" fill="#000000">Cálculo IV</text>
+<polyline fill="none" stroke="#ff0000" stroke-width="3" points="417.5,-879 417.5,-965 "/>
+<text text-anchor="middle" x="432.5" y="-947.3" font-family="Times,serif" font-size="14.00" fill="#000000">5</text>
+<polyline fill="none" stroke="#ff0000" stroke-width="3" points="417.5,-937 447.5,-937 "/>
+<text text-anchor="middle" x="432.5" y="-918.8" font-family="Times,serif" font-size="14.00" fill="#000000">0</text>
+<polyline fill="none" stroke="#ff0000" stroke-width="3" points="417.5,-908 447.5,-908 "/>
+<text text-anchor="middle" x="432.5" y="-889.8" font-family="Times,serif" font-size="14.00" fill="#000000">10</text>
+</g>
+<!-- CB0002T&#45;&gt;CB0003T -->
+<g id="edge17" class="edge">
+<title>CB0002T&#45;&gt;CB0003T</title>
+<path fill="none" stroke="#000000" d="M393.2973,-1023.8878C393.4022,-1008.6852 393.5213,-991.4074 393.6314,-975.4539"/>
+<polygon fill="#000000" stroke="#000000" points="397.1329,-975.2204 393.7021,-965.1965 390.1331,-975.1721 397.1329,-975.2204"/>
+</g>
+<!-- CB0002T&#45;&gt;CI0200T -->
+<g id="edge18" class="edge">
+<title>CB0002T&#45;&gt;CI0200T</title>
+<path fill="none" stroke="#000000" d="M446.2669,-1028.4613C449.1818,-1026.7207 452.1037,-1025.0547 455,-1023.5 517.2471,-990.0858 540.8815,-999.1526 603,-965.5 603.4146,-965.2754 603.8297,-965.0484 604.2451,-964.8192"/>
+<polygon fill="#000000" stroke="#000000" points="606.1215,-967.7767 612.9944,-959.7135 602.5934,-961.7308 606.1215,-967.7767"/>
+</g>
+<!-- CS0003T -->
+<g id="node43" class="node">
+<title>CS0003T</title>
+<polygon fill="none" stroke="#0000ff" stroke-width="3" points="1741.5,-879 1741.5,-965 1842.5,-965 1842.5,-879 1741.5,-879"/>
+<text text-anchor="middle" x="1779" y="-939.8" font-family="Times,serif" font-size="14.00" fill="#000000">CS0003&#45;T</text>
+<polyline fill="none" stroke="#0000ff" stroke-width="3" points="1741.5,-922 1816.5,-922 "/>
+<text text-anchor="middle" x="1779" y="-896.8" font-family="Times,serif" font-size="14.00" fill="#000000">Inglés IV</text>
+<polyline fill="none" stroke="#0000ff" stroke-width="3" points="1816.5,-879 1816.5,-965 "/>
+<text text-anchor="middle" x="1829.5" y="-947.3" font-family="Times,serif" font-size="14.00" fill="#000000">3</text>
+<polyline fill="none" stroke="#0000ff" stroke-width="3" points="1816.5,-937 1842.5,-937 "/>
+<text text-anchor="middle" x="1829.5" y="-918.8" font-family="Times,serif" font-size="14.00" fill="#000000">0</text>
+<polyline fill="none" stroke="#0000ff" stroke-width="3" points="1816.5,-908 1842.5,-908 "/>
+<text text-anchor="middle" x="1829.5" y="-889.8" font-family="Times,serif" font-size="14.00" fill="#000000">6</text>
+</g>
+<!-- CS0002T&#45;&gt;CS0003T -->
+<g id="edge55" class="edge">
+<title>CS0002T&#45;&gt;CS0003T</title>
+<path fill="none" stroke="#000000" d="M1792,-1023.8878C1792,-1008.6852 1792,-991.4074 1792,-975.4539"/>
+<polygon fill="#000000" stroke="#000000" points="1795.5001,-975.1964 1792,-965.1965 1788.5001,-975.1965 1795.5001,-975.1964"/>
+</g>
+<!-- CI0101L -->
+<g id="node32" class="node">
+<title>CI0101L</title>
+<polygon fill="none" stroke="#00ff00" stroke-width="3" points="1861,-1024 1861,-1110 1979,-1110 1979,-1024 1861,-1024"/>
+<text text-anchor="middle" x="1908.5" y="-1092.3" font-family="Times,serif" font-size="14.00" fill="#000000">CI0101&#45;L</text>
+<polyline fill="none" stroke="#00ff00" stroke-width="3" points="1861,-1082 1956,-1082 "/>
+<text text-anchor="middle" x="1908.5" y="-1064.3" font-family="Times,serif" font-size="14.00" fill="#000000">Laboratorio</text>
+<text text-anchor="middle" x="1908.5" y="-1049.3" font-family="Times,serif" font-size="14.00" fill="#000000">de Electrónica</text>
+<text text-anchor="middle" x="1908.5" y="-1034.3" font-family="Times,serif" font-size="14.00" fill="#000000">Analógica II</text>
+<polyline fill="none" stroke="#00ff00" stroke-width="3" points="1956,-1024 1956,-1110 "/>
+<text text-anchor="middle" x="1967.5" y="-1092.3" font-family="Times,serif" font-size="14.00" fill="#000000">0</text>
+<polyline fill="none" stroke="#00ff00" stroke-width="3" points="1956,-1082 1979,-1082 "/>
+<text text-anchor="middle" x="1967.5" y="-1063.8" font-family="Times,serif" font-size="14.00" fill="#000000">2</text>
+<polyline fill="none" stroke="#00ff00" stroke-width="3" points="1956,-1053 1979,-1053 "/>
+<text text-anchor="middle" x="1967.5" y="-1034.8" font-family="Times,serif" font-size="14.00" fill="#000000">4</text>
+</g>
+<!-- CB0102L -->
+<g id="node33" class="node">
+<title>CB0102L</title>
+<polygon fill="none" stroke="#ff0000" stroke-width="3" points="1997.5,-1024 1997.5,-1110 2140.5,-1110 2140.5,-1024 1997.5,-1024"/>
+<text text-anchor="middle" x="2057.5" y="-1092.3" font-family="Times,serif" font-size="14.00" fill="#000000">CB0102&#45;L</text>
+<polyline fill="none" stroke="#ff0000" stroke-width="3" points="1997.5,-1082 2117.5,-1082 "/>
+<text text-anchor="middle" x="2057.5" y="-1064.3" font-family="Times,serif" font-size="14.00" fill="#000000">Laboratorio</text>
+<text text-anchor="middle" x="2057.5" y="-1049.3" font-family="Times,serif" font-size="14.00" fill="#000000">de Teoría</text>
+<text text-anchor="middle" x="2057.5" y="-1034.3" font-family="Times,serif" font-size="14.00" fill="#000000">Electromagnética I</text>
+<polyline fill="none" stroke="#ff0000" stroke-width="3" points="2117.5,-1024 2117.5,-1110 "/>
+<text text-anchor="middle" x="2129" y="-1092.3" font-family="Times,serif" font-size="14.00" fill="#000000">0</text>
+<polyline fill="none" stroke="#ff0000" stroke-width="3" points="2117.5,-1082 2140.5,-1082 "/>
+<text text-anchor="middle" x="2129" y="-1063.8" font-family="Times,serif" font-size="14.00" fill="#000000">2</text>
+<polyline fill="none" stroke="#ff0000" stroke-width="3" points="2117.5,-1053 2140.5,-1053 "/>
+<text text-anchor="middle" x="2129" y="-1034.8" font-family="Times,serif" font-size="14.00" fill="#000000">4</text>
+</g>
+<!-- CB0501L -->
+<g id="node34" class="node">
+<title>CB0501L</title>
+<polygon fill="none" stroke="#ff0000" stroke-width="3" points="2158.5,-1024 2158.5,-1110 2285.5,-1110 2285.5,-1024 2158.5,-1024"/>
+<text text-anchor="middle" x="2210.5" y="-1092.3" font-family="Times,serif" font-size="14.00" fill="#000000">CB0501&#45;L</text>
+<polyline fill="none" stroke="#ff0000" stroke-width="3" points="2158.5,-1082 2262.5,-1082 "/>
+<text text-anchor="middle" x="2210.5" y="-1064.3" font-family="Times,serif" font-size="14.00" fill="#000000">Laboratorio</text>
+<text text-anchor="middle" x="2210.5" y="-1049.3" font-family="Times,serif" font-size="14.00" fill="#000000">de</text>
+<text text-anchor="middle" x="2210.5" y="-1034.3" font-family="Times,serif" font-size="14.00" fill="#000000">Termodinámica</text>
+<polyline fill="none" stroke="#ff0000" stroke-width="3" points="2262.5,-1024 2262.5,-1110 "/>
+<text text-anchor="middle" x="2274" y="-1092.3" font-family="Times,serif" font-size="14.00" fill="#000000">0</text>
+<polyline fill="none" stroke="#ff0000" stroke-width="3" points="2262.5,-1082 2285.5,-1082 "/>
+<text text-anchor="middle" x="2274" y="-1063.8" font-family="Times,serif" font-size="14.00" fill="#000000">1</text>
+<polyline fill="none" stroke="#ff0000" stroke-width="3" points="2262.5,-1053 2285.5,-1053 "/>
+<text text-anchor="middle" x="2274" y="-1034.8" font-family="Times,serif" font-size="14.00" fill="#000000">2</text>
+</g>
+<!-- CB0102T&#45;&gt;CI0200T -->
+<g id="edge24" class="edge">
+<title>CB0102T&#45;&gt;CI0200T</title>
+<path fill="none" stroke="#000000" d="M715.9979,-1023.8878C708.0916,-1008.3956 699.0854,-990.7484 690.8154,-974.5437"/>
+<polygon fill="#000000" stroke="#000000" points="693.7083,-972.5126 686.0451,-965.1965 687.4733,-975.6946 693.7083,-972.5126"/>
+</g>
+<!-- IA3100T -->
+<g id="node55" class="node">
+<title>IA3100T</title>
+<polygon fill="none" stroke="#ffa500" stroke-width="3" points="404.5,-589 404.5,-675 543.5,-675 543.5,-589 404.5,-589"/>
+<text text-anchor="middle" x="462.5" y="-649.8" font-family="Times,serif" font-size="14.00" fill="#000000">IA3100&#45;T</text>
+<polyline fill="none" stroke="#ffa500" stroke-width="3" points="404.5,-632 520.5,-632 "/>
+<text text-anchor="middle" x="462.5" y="-606.8" font-family="Times,serif" font-size="14.00" fill="#000000">Comunicaciones I</text>
+<polyline fill="none" stroke="#ffa500" stroke-width="3" points="520.5,-589 520.5,-675 "/>
+<text text-anchor="middle" x="532" y="-657.3" font-family="Times,serif" font-size="14.00" fill="#000000">4</text>
+<polyline fill="none" stroke="#ffa500" stroke-width="3" points="520.5,-647 543.5,-647 "/>
+<text text-anchor="middle" x="532" y="-628.8" font-family="Times,serif" font-size="14.00" fill="#000000">0</text>
+<polyline fill="none" stroke="#ffa500" stroke-width="3" points="520.5,-618 543.5,-618 "/>
+<text text-anchor="middle" x="532" y="-599.8" font-family="Times,serif" font-size="14.00" fill="#000000">8</text>
+</g>
+<!-- CB0102T&#45;&gt;IA3100T -->
+<g id="edge25" class="edge">
+<title>CB0102T&#45;&gt;IA3100T</title>
+<path fill="none" stroke="#000000" d="M743.1545,-1023.686C745.9835,-984.029 745.356,-924.6641 724,-878.5 685.6261,-795.5493 606.4355,-725.2027 547.4088,-681.1538"/>
+<polygon fill="#000000" stroke="#000000" points="549.3454,-678.2332 539.22,-675.1143 545.1904,-683.8667 549.3454,-678.2332"/>
+</g>
+<!-- CI0400T -->
+<g id="node48" class="node">
+<title>CI0400T</title>
+<polygon fill="none" stroke="#00ff00" stroke-width="3" points="342,-734 342,-820 446,-820 446,-734 342,-734"/>
+<text text-anchor="middle" x="382.5" y="-798.8" font-family="Times,serif" font-size="14.00" fill="#000000">CI0400&#45;T</text>
+<polyline fill="none" stroke="#00ff00" stroke-width="3" points="342,-785 423,-785 "/>
+<text text-anchor="middle" x="382.5" y="-763.3" font-family="Times,serif" font-size="14.00" fill="#000000">Control</text>
+<text text-anchor="middle" x="382.5" y="-748.3" font-family="Times,serif" font-size="14.00" fill="#000000">Analógico I</text>
+<polyline fill="none" stroke="#00ff00" stroke-width="3" points="423,-734 423,-820 "/>
+<text text-anchor="middle" x="434.5" y="-802.3" font-family="Times,serif" font-size="14.00" fill="#000000">3</text>
+<polyline fill="none" stroke="#00ff00" stroke-width="3" points="423,-792 446,-792 "/>
+<text text-anchor="middle" x="434.5" y="-773.8" font-family="Times,serif" font-size="14.00" fill="#000000">0</text>
+<polyline fill="none" stroke="#00ff00" stroke-width="3" points="423,-763 446,-763 "/>
+<text text-anchor="middle" x="434.5" y="-744.8" font-family="Times,serif" font-size="14.00" fill="#000000">6</text>
+</g>
+<!-- CB0003T&#45;&gt;CI0400T -->
+<g id="edge20" class="edge">
+<title>CB0003T&#45;&gt;CI0400T</title>
+<path fill="none" stroke="#000000" d="M394,-878.8878C394,-863.6852 394,-846.4074 394,-830.4539"/>
+<polygon fill="#000000" stroke="#000000" points="397.5001,-830.1964 394,-820.1965 390.5001,-830.1965 397.5001,-830.1964"/>
+</g>
+<!-- CB0003T&#45;&gt;IA3100T -->
+<g id="edge19" class="edge">
+<title>CB0003T&#45;&gt;IA3100T</title>
+<path fill="none" stroke="#000000" d="M425.847,-878.6035C436.9264,-861.3465 448.2579,-840.7906 455,-820.5 469.5996,-776.5621 473.8882,-723.9507 474.791,-685.489"/>
+<polygon fill="#000000" stroke="#000000" points="478.2979,-685.0908 474.9616,-675.035 471.2988,-684.9766 478.2979,-685.0908"/>
+</g>
+<!-- IA7400T -->
+<g id="node62" class="node">
+<title>IA7400T</title>
+<polygon fill="none" stroke="#ffa500" stroke-width="3" points="780.5,-589 780.5,-675 899.5,-675 899.5,-589 780.5,-589"/>
+<text text-anchor="middle" x="828.5" y="-657.3" font-family="Times,serif" font-size="14.00" fill="#000000">IA7400&#45;T</text>
+<polyline fill="none" stroke="#ffa500" stroke-width="3" points="780.5,-647 876.5,-647 "/>
+<text text-anchor="middle" x="828.5" y="-629.3" font-family="Times,serif" font-size="14.00" fill="#000000">Organización</text>
+<text text-anchor="middle" x="828.5" y="-614.3" font-family="Times,serif" font-size="14.00" fill="#000000">de</text>
+<text text-anchor="middle" x="828.5" y="-599.3" font-family="Times,serif" font-size="14.00" fill="#000000">Computadoras</text>
+<polyline fill="none" stroke="#ffa500" stroke-width="3" points="876.5,-589 876.5,-675 "/>
+<text text-anchor="middle" x="888" y="-657.3" font-family="Times,serif" font-size="14.00" fill="#000000">3</text>
+<polyline fill="none" stroke="#ffa500" stroke-width="3" points="876.5,-647 899.5,-647 "/>
+<text text-anchor="middle" x="888" y="-628.8" font-family="Times,serif" font-size="14.00" fill="#000000">0</text>
+<polyline fill="none" stroke="#ffa500" stroke-width="3" points="876.5,-618 899.5,-618 "/>
+<text text-anchor="middle" x="888" y="-599.8" font-family="Times,serif" font-size="14.00" fill="#000000">6</text>
+</g>
+<!-- CI0300T&#45;&gt;IA7400T -->
+<g id="edge43" class="edge">
+<title>CI0300T&#45;&gt;IA7400T</title>
+<path fill="none" stroke="#000000" d="M587.9946,-878.8972C641.4769,-826.499 731.5989,-738.2037 788.3308,-682.6219"/>
+<polygon fill="#000000" stroke="#000000" points="791.0702,-684.8378 795.7639,-675.3394 786.1714,-679.8376 791.0702,-684.8378"/>
+</g>
+<!-- CI0300T&#45;&gt;IA7600T -->
+<g id="edge44" class="edge">
+<title>CI0300T&#45;&gt;IA7600T</title>
+<path fill="none" stroke="#000000" d="M594.7963,-884.5891C597.8872,-882.4949 600.9712,-880.4506 604,-878.5 647.8438,-850.2631 662.0896,-848.6334 706,-820.5 849.5139,-728.5507 1006.5668,-604.5426 1090.0098,-536.611"/>
+<polygon fill="#000000" stroke="#000000" points="1092.3148,-539.2476 1097.8523,-530.215 1087.8907,-533.8229 1092.3148,-539.2476"/>
+</g>
+<!-- CI7102T -->
+<g id="node47" class="node">
+<title>CI7102T</title>
+<polygon fill="none" stroke="#00ff00" stroke-width="3" points="1283,-734 1283,-820 1385,-820 1385,-734 1283,-734"/>
+<text text-anchor="middle" x="1322.5" y="-802.3" font-family="Times,serif" font-size="14.00" fill="#000000">CI7102&#45;T</text>
+<polyline fill="none" stroke="#00ff00" stroke-width="3" points="1283,-792 1362,-792 "/>
+<text text-anchor="middle" x="1322.5" y="-774.3" font-family="Times,serif" font-size="14.00" fill="#000000">Análisis</text>
+<text text-anchor="middle" x="1322.5" y="-759.3" font-family="Times,serif" font-size="14.00" fill="#000000">de</text>
+<text text-anchor="middle" x="1322.5" y="-744.3" font-family="Times,serif" font-size="14.00" fill="#000000">Algoritmos</text>
+<polyline fill="none" stroke="#00ff00" stroke-width="3" points="1362,-734 1362,-820 "/>
+<text text-anchor="middle" x="1373.5" y="-802.3" font-family="Times,serif" font-size="14.00" fill="#000000">4</text>
+<polyline fill="none" stroke="#00ff00" stroke-width="3" points="1362,-792 1385,-792 "/>
+<text text-anchor="middle" x="1373.5" y="-773.8" font-family="Times,serif" font-size="14.00" fill="#000000">0</text>
+<polyline fill="none" stroke="#00ff00" stroke-width="3" points="1362,-763 1385,-763 "/>
+<text text-anchor="middle" x="1373.5" y="-744.8" font-family="Times,serif" font-size="14.00" fill="#000000">8</text>
+</g>
+<!-- CI7100T&#45;&gt;CI7102T -->
+<g id="edge50" class="edge">
+<title>CI7100T&#45;&gt;CI7102T</title>
+<path fill="none" stroke="#000000" d="M1334,-878.8878C1334,-863.6852 1334,-846.4074 1334,-830.4539"/>
+<polygon fill="#000000" stroke="#000000" points="1337.5001,-830.1964 1334,-820.1965 1330.5001,-830.1965 1337.5001,-830.1964"/>
+</g>
+<!-- IA7300T -->
+<g id="node52" class="node">
+<title>IA7300T</title>
+<polygon fill="none" stroke="#ffa500" stroke-width="3" points="1403,-734 1403,-820 1519,-820 1519,-734 1403,-734"/>
+<text text-anchor="middle" x="1449.5" y="-802.3" font-family="Times,serif" font-size="14.00" fill="#000000">IA7300&#45;T</text>
+<polyline fill="none" stroke="#ffa500" stroke-width="3" points="1403,-792 1496,-792 "/>
+<text text-anchor="middle" x="1449.5" y="-774.3" font-family="Times,serif" font-size="14.00" fill="#000000">Paradigmas</text>
+<text text-anchor="middle" x="1449.5" y="-759.3" font-family="Times,serif" font-size="14.00" fill="#000000">de</text>
+<text text-anchor="middle" x="1449.5" y="-744.3" font-family="Times,serif" font-size="14.00" fill="#000000">Programación</text>
+<polyline fill="none" stroke="#ffa500" stroke-width="3" points="1496,-734 1496,-820 "/>
+<text text-anchor="middle" x="1507.5" y="-802.3" font-family="Times,serif" font-size="14.00" fill="#000000">3</text>
+<polyline fill="none" stroke="#ffa500" stroke-width="3" points="1496,-792 1519,-792 "/>
+<text text-anchor="middle" x="1507.5" y="-773.8" font-family="Times,serif" font-size="14.00" fill="#000000">0</text>
+<polyline fill="none" stroke="#ffa500" stroke-width="3" points="1496,-763 1519,-763 "/>
+<text text-anchor="middle" x="1507.5" y="-744.8" font-family="Times,serif" font-size="14.00" fill="#000000">6</text>
+</g>
+<!-- CI7101T&#45;&gt;IA7300T -->
+<g id="edge52" class="edge">
+<title>CI7101T&#45;&gt;IA7300T</title>
+<path fill="none" stroke="#000000" d="M1461,-878.8878C1461,-863.6852 1461,-846.4074 1461,-830.4539"/>
+<polygon fill="#000000" stroke="#000000" points="1464.5001,-830.1964 1461,-820.1965 1457.5001,-830.1965 1464.5001,-830.1964"/>
+</g>
+<!-- CI7101T&#45;&gt;IA7500T -->
+<g id="edge51" class="edge">
+<title>CI7101T&#45;&gt;IA7500T</title>
+<path fill="none" stroke="#000000" d="M1496.8549,-878.6911C1508.9723,-861.6053 1521.1552,-841.1427 1528,-820.5 1559.4025,-725.7956 1557.1781,-607.7566 1552.3419,-540.5211"/>
+<polygon fill="#000000" stroke="#000000" points="1555.8031,-539.8806 1551.548,-530.1778 1548.8236,-540.4164 1555.8031,-539.8806"/>
+</g>
+<!-- CI0300L -->
+<g id="node44" class="node">
+<title>CI0300L</title>
+<polygon fill="none" stroke="#00ff00" stroke-width="3" points="1861,-879 1861,-965 1979,-965 1979,-879 1861,-879"/>
+<text text-anchor="middle" x="1908.5" y="-947.3" font-family="Times,serif" font-size="14.00" fill="#000000">CI0300&#45;L</text>
+<polyline fill="none" stroke="#00ff00" stroke-width="3" points="1861,-937 1956,-937 "/>
+<text text-anchor="middle" x="1908.5" y="-919.3" font-family="Times,serif" font-size="14.00" fill="#000000">Laboratorio</text>
+<text text-anchor="middle" x="1908.5" y="-904.3" font-family="Times,serif" font-size="14.00" fill="#000000">de Electrónica</text>
+<text text-anchor="middle" x="1908.5" y="-889.3" font-family="Times,serif" font-size="14.00" fill="#000000">Digital I</text>
+<polyline fill="none" stroke="#00ff00" stroke-width="3" points="1956,-879 1956,-965 "/>
+<text text-anchor="middle" x="1967.5" y="-947.3" font-family="Times,serif" font-size="14.00" fill="#000000">0</text>
+<polyline fill="none" stroke="#00ff00" stroke-width="3" points="1956,-937 1979,-937 "/>
+<text text-anchor="middle" x="1967.5" y="-918.8" font-family="Times,serif" font-size="14.00" fill="#000000">2</text>
+<polyline fill="none" stroke="#00ff00" stroke-width="3" points="1956,-908 1979,-908 "/>
+<text text-anchor="middle" x="1967.5" y="-889.8" font-family="Times,serif" font-size="14.00" fill="#000000">4</text>
+</g>
+<!-- CI7001T -->
+<g id="node51" class="node">
+<title>CI7001T</title>
+<polygon fill="none" stroke="#00ff00" stroke-width="3" points="1656.5,-734 1656.5,-820 1765.5,-820 1765.5,-734 1656.5,-734"/>
+<text text-anchor="middle" x="1699.5" y="-802.3" font-family="Times,serif" font-size="14.00" fill="#000000">CI7001&#45;T</text>
+<polyline fill="none" stroke="#00ff00" stroke-width="3" points="1656.5,-792 1742.5,-792 "/>
+<text text-anchor="middle" x="1699.5" y="-774.3" font-family="Times,serif" font-size="14.00" fill="#000000">Lenguajes</text>
+<text text-anchor="middle" x="1699.5" y="-759.3" font-family="Times,serif" font-size="14.00" fill="#000000">Formales</text>
+<text text-anchor="middle" x="1699.5" y="-744.3" font-family="Times,serif" font-size="14.00" fill="#000000">y Autómatas</text>
+<polyline fill="none" stroke="#00ff00" stroke-width="3" points="1742.5,-734 1742.5,-820 "/>
+<text text-anchor="middle" x="1754" y="-802.3" font-family="Times,serif" font-size="14.00" fill="#000000">3</text>
+<polyline fill="none" stroke="#00ff00" stroke-width="3" points="1742.5,-792 1765.5,-792 "/>
+<text text-anchor="middle" x="1754" y="-773.8" font-family="Times,serif" font-size="14.00" fill="#000000">0</text>
+<polyline fill="none" stroke="#00ff00" stroke-width="3" points="1742.5,-763 1765.5,-763 "/>
+<text text-anchor="middle" x="1754" y="-744.8" font-family="Times,serif" font-size="14.00" fill="#000000">6</text>
+</g>
+<!-- CI7000T&#45;&gt;CI7001T -->
+<g id="edge57" class="edge">
+<title>CI7000T&#45;&gt;CI7001T</title>
+<path fill="none" stroke="#000000" d="M1680.785,-878.8878C1685.3363,-863.5404 1690.5148,-846.0781 1695.2832,-829.9984"/>
+<polygon fill="#000000" stroke="#000000" points="1698.7024,-830.7789 1698.19,-820.1965 1691.9912,-828.7887 1698.7024,-830.7789"/>
+</g>
+<!-- IA7700T -->
+<g id="node78" class="node">
+<title>IA7700T</title>
+<polygon fill="none" stroke="#ffa500" stroke-width="3" points="1494.5,-153 1494.5,-239 1597.5,-239 1597.5,-153 1494.5,-153"/>
+<text text-anchor="middle" x="1534.5" y="-217.8" font-family="Times,serif" font-size="14.00" fill="#000000">IA7700&#45;T</text>
+<polyline fill="none" stroke="#ffa500" stroke-width="3" points="1494.5,-204 1574.5,-204 "/>
+<text text-anchor="middle" x="1534.5" y="-182.3" font-family="Times,serif" font-size="14.00" fill="#000000">Inteligencia</text>
+<text text-anchor="middle" x="1534.5" y="-167.3" font-family="Times,serif" font-size="14.00" fill="#000000">Artificial</text>
+<polyline fill="none" stroke="#ffa500" stroke-width="3" points="1574.5,-153 1574.5,-239 "/>
+<text text-anchor="middle" x="1586" y="-221.3" font-family="Times,serif" font-size="14.00" fill="#000000">3</text>
+<polyline fill="none" stroke="#ffa500" stroke-width="3" points="1574.5,-211 1597.5,-211 "/>
+<text text-anchor="middle" x="1586" y="-192.8" font-family="Times,serif" font-size="14.00" fill="#000000">0</text>
+<polyline fill="none" stroke="#ffa500" stroke-width="3" points="1574.5,-182 1597.5,-182 "/>
+<text text-anchor="middle" x="1586" y="-163.8" font-family="Times,serif" font-size="14.00" fill="#000000">6</text>
+</g>
+<!-- CI7000T&#45;&gt;IA7700T -->
+<g id="edge56" class="edge">
+<title>CI7000T&#45;&gt;IA7700T</title>
+<path fill="none" stroke="#000000" d="M1657.7256,-878.558C1645.2916,-822.0927 1626,-720.2638 1626,-632 1626,-632 1626,-632 1626,-487 1626,-401.3134 1593.3523,-306.3481 1569.7691,-248.9274"/>
+<polygon fill="#000000" stroke="#000000" points="1572.8539,-247.2309 1565.7753,-239.3478 1566.393,-249.9246 1572.8539,-247.2309"/>
+</g>
+<!-- CB7000T&#45;&gt;IA7200T -->
+<g id="edge33" class="edge">
+<title>CB7000T&#45;&gt;IA7200T</title>
+<path fill="none" stroke="#000000" d="M1086.2171,-733.8878C1089.4983,-718.5404 1093.2316,-701.0781 1096.6693,-684.9984"/>
+<polygon fill="#000000" stroke="#000000" points="1100.0968,-685.7072 1098.7649,-675.1965 1093.2515,-684.2437 1100.0968,-685.7072"/>
+</g>
+<!-- CB7000T&#45;&gt;IA7800T -->
+<g id="edge34" class="edge">
+<title>CB7000T&#45;&gt;IA7800T</title>
+<path fill="none" stroke="#000000" d="M1063.326,-733.8972C1046.9406,-682.2475 1019.4902,-595.7191 1001.8213,-540.0238"/>
+<polygon fill="#000000" stroke="#000000" points="1005.1092,-538.8129 998.7491,-530.3394 998.4369,-540.9296 1005.1092,-538.8129"/>
+</g>
+<!-- CI0400T&#45;&gt;IA3100T -->
+<g id="edge45" class="edge">
+<title>CI0400T&#45;&gt;IA3100T</title>
+<path fill="none" stroke="#ff0000" d="M417.786,-733.8878C426.4133,-718.2509 436.2519,-700.4184 445.2608,-684.0897"/>
+<polygon fill="#ff0000" stroke="#ff0000" points="448.4012,-685.643 450.1675,-675.1965 442.2721,-682.2615 448.4012,-685.643"/>
+</g>
+<!-- CI0401T -->
+<g id="node56" class="node">
+<title>CI0401T</title>
+<polygon fill="none" stroke="#00ff00" stroke-width="3" points="175.5,-589 175.5,-675 284.5,-675 284.5,-589 175.5,-589"/>
+<text text-anchor="middle" x="218.5" y="-653.8" font-family="Times,serif" font-size="14.00" fill="#000000">CI0401&#45;T</text>
+<polyline fill="none" stroke="#00ff00" stroke-width="3" points="175.5,-640 261.5,-640 "/>
+<text text-anchor="middle" x="218.5" y="-618.3" font-family="Times,serif" font-size="14.00" fill="#000000">Control</text>
+<text text-anchor="middle" x="218.5" y="-603.3" font-family="Times,serif" font-size="14.00" fill="#000000">Analógico II</text>
+<polyline fill="none" stroke="#00ff00" stroke-width="3" points="261.5,-589 261.5,-675 "/>
+<text text-anchor="middle" x="273" y="-657.3" font-family="Times,serif" font-size="14.00" fill="#000000">3</text>
+<polyline fill="none" stroke="#00ff00" stroke-width="3" points="261.5,-647 284.5,-647 "/>
+<text text-anchor="middle" x="273" y="-628.8" font-family="Times,serif" font-size="14.00" fill="#000000">0</text>
+<polyline fill="none" stroke="#00ff00" stroke-width="3" points="261.5,-618 284.5,-618 "/>
+<text text-anchor="middle" x="273" y="-599.8" font-family="Times,serif" font-size="14.00" fill="#000000">6</text>
+</g>
+<!-- CI0400T&#45;&gt;CI0401T -->
+<g id="edge46" class="edge">
+<title>CI0400T&#45;&gt;CI0401T</title>
+<path fill="none" stroke="#000000" d="M345.2386,-733.8878C326.7339,-717.5269 305.5107,-698.7625 286.3616,-681.8319"/>
+<polygon fill="#000000" stroke="#000000" points="288.6668,-679.1982 278.8567,-675.1965 284.0301,-684.4424 288.6668,-679.1982"/>
+</g>
+<!-- CI0400L -->
+<g id="node49" class="node">
+<title>CI0400L</title>
+<polygon fill="none" stroke="#00ff00" stroke-width="3" points="1783.5,-734 1783.5,-820 1932.5,-820 1932.5,-734 1783.5,-734"/>
+<text text-anchor="middle" x="1846.5" y="-802.3" font-family="Times,serif" font-size="14.00" fill="#000000">CI0400&#45;L</text>
+<polyline fill="none" stroke="#00ff00" stroke-width="3" points="1783.5,-792 1909.5,-792 "/>
+<text text-anchor="middle" x="1846.5" y="-774.3" font-family="Times,serif" font-size="14.00" fill="#000000">Laboratorio</text>
+<text text-anchor="middle" x="1846.5" y="-759.3" font-family="Times,serif" font-size="14.00" fill="#000000">de</text>
+<text text-anchor="middle" x="1846.5" y="-744.3" font-family="Times,serif" font-size="14.00" fill="#000000">Control Analógico I</text>
+<polyline fill="none" stroke="#00ff00" stroke-width="3" points="1909.5,-734 1909.5,-820 "/>
+<text text-anchor="middle" x="1921" y="-802.3" font-family="Times,serif" font-size="14.00" fill="#000000">0</text>
+<polyline fill="none" stroke="#00ff00" stroke-width="3" points="1909.5,-792 1932.5,-792 "/>
+<text text-anchor="middle" x="1921" y="-773.8" font-family="Times,serif" font-size="14.00" fill="#000000">2</text>
+<polyline fill="none" stroke="#00ff00" stroke-width="3" points="1909.5,-763 1932.5,-763 "/>
+<text text-anchor="middle" x="1921" y="-744.8" font-family="Times,serif" font-size="14.00" fill="#000000">4</text>
+</g>
+<!-- IA7300L -->
+<g id="node50" class="node">
+<title>IA7300L</title>
+<polygon fill="none" stroke="#ffa500" stroke-width="3" points="1950.5,-734 1950.5,-820 2083.5,-820 2083.5,-734 1950.5,-734"/>
+<text text-anchor="middle" x="2005.5" y="-802.3" font-family="Times,serif" font-size="14.00" fill="#000000">IA7300&#45;L</text>
+<polyline fill="none" stroke="#ffa500" stroke-width="3" points="1950.5,-792 2060.5,-792 "/>
+<text text-anchor="middle" x="2005.5" y="-774.3" font-family="Times,serif" font-size="14.00" fill="#000000">Laboratorio</text>
+<text text-anchor="middle" x="2005.5" y="-759.3" font-family="Times,serif" font-size="14.00" fill="#000000">de Paradigmas</text>
+<text text-anchor="middle" x="2005.5" y="-744.3" font-family="Times,serif" font-size="14.00" fill="#000000">de Programación</text>
+<polyline fill="none" stroke="#ffa500" stroke-width="3" points="2060.5,-734 2060.5,-820 "/>
+<text text-anchor="middle" x="2072" y="-802.3" font-family="Times,serif" font-size="14.00" fill="#000000">0</text>
+<polyline fill="none" stroke="#ffa500" stroke-width="3" points="2060.5,-792 2083.5,-792 "/>
+<text text-anchor="middle" x="2072" y="-773.8" font-family="Times,serif" font-size="14.00" fill="#000000">3</text>
+<polyline fill="none" stroke="#ffa500" stroke-width="3" points="2060.5,-763 2083.5,-763 "/>
+<text text-anchor="middle" x="2072" y="-744.8" font-family="Times,serif" font-size="14.00" fill="#000000">6</text>
+</g>
+<!-- IA7100T -->
+<g id="node54" class="node">
+<title>IA7100T</title>
+<polygon fill="none" stroke="#ffa500" stroke-width="3" points="1739,-589 1739,-675 1855,-675 1855,-589 1739,-589"/>
+<text text-anchor="middle" x="1785.5" y="-649.8" font-family="Times,serif" font-size="14.00" fill="#000000">IA7100&#45;T</text>
+<polyline fill="none" stroke="#ffa500" stroke-width="3" points="1739,-632 1832,-632 "/>
+<text text-anchor="middle" x="1785.5" y="-606.8" font-family="Times,serif" font-size="14.00" fill="#000000">Compiladores</text>
+<polyline fill="none" stroke="#ffa500" stroke-width="3" points="1832,-589 1832,-675 "/>
+<text text-anchor="middle" x="1843.5" y="-657.3" font-family="Times,serif" font-size="14.00" fill="#000000">3</text>
+<polyline fill="none" stroke="#ffa500" stroke-width="3" points="1832,-647 1855,-647 "/>
+<text text-anchor="middle" x="1843.5" y="-628.8" font-family="Times,serif" font-size="14.00" fill="#000000">0</text>
+<polyline fill="none" stroke="#ffa500" stroke-width="3" points="1832,-618 1855,-618 "/>
+<text text-anchor="middle" x="1843.5" y="-599.8" font-family="Times,serif" font-size="14.00" fill="#000000">6</text>
+</g>
+<!-- CI7001T&#45;&gt;IA7100T -->
+<g id="edge48" class="edge">
+<title>CI7001T&#45;&gt;IA7100T</title>
+<path fill="none" stroke="#000000" d="M1736.57,-733.8878C1745.8443,-718.2509 1756.4208,-700.4184 1766.1054,-684.0897"/>
+<polygon fill="#000000" stroke="#000000" points="1769.2891,-685.5829 1771.38,-675.1965 1763.2684,-682.012 1769.2891,-685.5829"/>
+</g>
+<!-- CI7002T -->
+<g id="node68" class="node">
+<title>CI7002T</title>
+<polygon fill="none" stroke="#00ff00" stroke-width="3" points="1654.5,-444 1654.5,-530 1767.5,-530 1767.5,-444 1654.5,-444"/>
+<text text-anchor="middle" x="1699.5" y="-512.3" font-family="Times,serif" font-size="14.00" fill="#000000">CI7002&#45;T</text>
+<polyline fill="none" stroke="#00ff00" stroke-width="3" points="1654.5,-502 1744.5,-502 "/>
+<text text-anchor="middle" x="1699.5" y="-484.3" font-family="Times,serif" font-size="14.00" fill="#000000">Teoría</text>
+<text text-anchor="middle" x="1699.5" y="-469.3" font-family="Times,serif" font-size="14.00" fill="#000000">de la</text>
+<text text-anchor="middle" x="1699.5" y="-454.3" font-family="Times,serif" font-size="14.00" fill="#000000">Computación</text>
+<polyline fill="none" stroke="#00ff00" stroke-width="3" points="1744.5,-444 1744.5,-530 "/>
+<text text-anchor="middle" x="1756" y="-512.3" font-family="Times,serif" font-size="14.00" fill="#000000">4</text>
+<polyline fill="none" stroke="#00ff00" stroke-width="3" points="1744.5,-502 1767.5,-502 "/>
+<text text-anchor="middle" x="1756" y="-483.8" font-family="Times,serif" font-size="14.00" fill="#000000">0</text>
+<polyline fill="none" stroke="#00ff00" stroke-width="3" points="1744.5,-473 1767.5,-473 "/>
+<text text-anchor="middle" x="1756" y="-454.8" font-family="Times,serif" font-size="14.00" fill="#000000">8</text>
+</g>
+<!-- CI7001T&#45;&gt;CI7002T -->
+<g id="edge49" class="edge">
+<title>CI7001T&#45;&gt;CI7002T</title>
+<path fill="none" stroke="#000000" d="M1711,-733.8972C1711,-682.3545 1711,-596.0773 1711,-540.3701"/>
+<polygon fill="#000000" stroke="#000000" points="1714.5001,-540.3394 1711,-530.3394 1707.5001,-540.3394 1714.5001,-540.3394"/>
+</g>
+<!-- IA7300T&#45;&gt;IA7700T -->
+<g id="edge60" class="edge">
+<title>IA7300T&#45;&gt;IA7700T</title>
+<path fill="none" stroke="#000000" d="M1462.2126,-733.8433C1464.4908,-670.0336 1470.7454,-546.9105 1487,-443.5 1497.6522,-375.7314 1517.0932,-299.1015 1530.7395,-249.3016"/>
+<polygon fill="#000000" stroke="#000000" points="1534.1849,-249.9734 1533.4726,-239.4026 1527.4373,-248.1104 1534.1849,-249.9734"/>
+</g>
+<!-- CI7300T -->
+<g id="node74" class="node">
+<title>CI7300T</title>
+<polygon fill="none" stroke="#00ff00" stroke-width="3" points="72.5,-299 72.5,-385 181.5,-385 181.5,-299 72.5,-299"/>
+<text text-anchor="middle" x="115.5" y="-363.8" font-family="Times,serif" font-size="14.00" fill="#000000">CI7300&#45;T</text>
+<polyline fill="none" stroke="#00ff00" stroke-width="3" points="72.5,-350 158.5,-350 "/>
+<text text-anchor="middle" x="115.5" y="-328.3" font-family="Times,serif" font-size="14.00" fill="#000000">Modelos</text>
+<text text-anchor="middle" x="115.5" y="-313.3" font-family="Times,serif" font-size="14.00" fill="#000000">Probabilistas</text>
+<polyline fill="none" stroke="#00ff00" stroke-width="3" points="158.5,-299 158.5,-385 "/>
+<text text-anchor="middle" x="170" y="-367.3" font-family="Times,serif" font-size="14.00" fill="#000000">3</text>
+<polyline fill="none" stroke="#00ff00" stroke-width="3" points="158.5,-357 181.5,-357 "/>
+<text text-anchor="middle" x="170" y="-338.8" font-family="Times,serif" font-size="14.00" fill="#000000">0</text>
+<polyline fill="none" stroke="#00ff00" stroke-width="3" points="158.5,-328 181.5,-328 "/>
+<text text-anchor="middle" x="170" y="-309.8" font-family="Times,serif" font-size="14.00" fill="#000000">6</text>
+</g>
+<!-- CB0600T&#45;&gt;CI7300T -->
+<g id="edge32" class="edge">
+<title>CB0600T&#45;&gt;CI7300T</title>
+<path fill="none" stroke="#000000" d="M196.7359,-733.7496C185.13,-716.5106 173.2148,-695.9288 166,-675.5 132.6017,-580.9321 126.4797,-462.8462 126.0563,-395.5652"/>
+<polygon fill="#000000" stroke="#000000" points="129.5556,-395.207 126.034,-385.2146 122.5557,-395.2222 129.5556,-395.207"/>
+</g>
+<!-- IA3400T -->
+<g id="node70" class="node">
+<title>IA3400T</title>
+<polygon fill="none" stroke="#ffa500" stroke-width="3" points="199.5,-299 199.5,-385 300.5,-385 300.5,-299 199.5,-299"/>
+<text text-anchor="middle" x="236.5" y="-363.8" font-family="Times,serif" font-size="14.00" fill="#000000">IA3400&#45;T</text>
+<polyline fill="none" stroke="#ffa500" stroke-width="3" points="199.5,-350 273.5,-350 "/>
+<text text-anchor="middle" x="236.5" y="-328.3" font-family="Times,serif" font-size="14.00" fill="#000000">Control</text>
+<text text-anchor="middle" x="236.5" y="-313.3" font-family="Times,serif" font-size="14.00" fill="#000000">Digital I</text>
+<polyline fill="none" stroke="#ffa500" stroke-width="3" points="273.5,-299 273.5,-385 "/>
+<text text-anchor="middle" x="287" y="-367.3" font-family="Times,serif" font-size="14.00" fill="#000000">3</text>
+<polyline fill="none" stroke="#ffa500" stroke-width="3" points="273.5,-357 300.5,-357 "/>
+<text text-anchor="middle" x="287" y="-338.8" font-family="Times,serif" font-size="14.00" fill="#000000">0</text>
+<polyline fill="none" stroke="#ffa500" stroke-width="3" points="273.5,-328 300.5,-328 "/>
+<text text-anchor="middle" x="287" y="-309.8" font-family="Times,serif" font-size="14.00" fill="#000000">6</text>
+</g>
+<!-- CI0401T&#45;&gt;IA3400T -->
+<g id="edge47" class="edge">
+<title>CI0401T&#45;&gt;IA3400T</title>
+<path fill="none" stroke="#000000" d="M232.9726,-588.8972C236.5273,-537.3545 242.4774,-451.0773 246.3193,-395.3701"/>
+<polygon fill="#000000" stroke="#000000" points="249.8147,-395.5565 247.0111,-385.3394 242.8313,-395.0749 249.8147,-395.5565"/>
+</g>
+<!-- OC0300T -->
+<g id="node57" class="node">
+<title>OC0300T</title>
+<polygon fill="none" stroke="#a52a2a" stroke-width="3" points="1873.5,-589 1873.5,-675 1974.5,-675 1974.5,-589 1873.5,-589"/>
+<text text-anchor="middle" x="1911.5" y="-649.8" font-family="Times,serif" font-size="14.00" fill="#000000">OC0300&#45;T</text>
+<polyline fill="none" stroke="#a52a2a" stroke-width="3" points="1873.5,-632 1949.5,-632 "/>
+<text text-anchor="middle" x="1911.5" y="-606.8" font-family="Times,serif" font-size="14.00" fill="#000000">Economía</text>
+<polyline fill="none" stroke="#a52a2a" stroke-width="3" points="1949.5,-589 1949.5,-675 "/>
+<text text-anchor="middle" x="1962" y="-657.3" font-family="Times,serif" font-size="14.00" fill="#000000">3</text>
+<polyline fill="none" stroke="#a52a2a" stroke-width="3" points="1949.5,-647 1974.5,-647 "/>
+<text text-anchor="middle" x="1962" y="-628.8" font-family="Times,serif" font-size="14.00" fill="#000000">0</text>
+<polyline fill="none" stroke="#a52a2a" stroke-width="3" points="1949.5,-618 1974.5,-618 "/>
+<text text-anchor="middle" x="1962" y="-599.8" font-family="Times,serif" font-size="14.00" fill="#000000">6</text>
+</g>
+<!-- IA3100L -->
+<g id="node59" class="node">
+<title>IA3100L</title>
+<polygon fill="none" stroke="#ffa500" stroke-width="3" points="1992.5,-589 1992.5,-675 2131.5,-675 2131.5,-589 1992.5,-589"/>
+<text text-anchor="middle" x="2050.5" y="-657.3" font-family="Times,serif" font-size="14.00" fill="#000000">IA3100&#45;L</text>
+<polyline fill="none" stroke="#ffa500" stroke-width="3" points="1992.5,-647 2108.5,-647 "/>
+<text text-anchor="middle" x="2050.5" y="-629.3" font-family="Times,serif" font-size="14.00" fill="#000000">Laboratorio</text>
+<text text-anchor="middle" x="2050.5" y="-614.3" font-family="Times,serif" font-size="14.00" fill="#000000">de</text>
+<text text-anchor="middle" x="2050.5" y="-599.3" font-family="Times,serif" font-size="14.00" fill="#000000">Comunicaciones I</text>
+<polyline fill="none" stroke="#ffa500" stroke-width="3" points="2108.5,-589 2108.5,-675 "/>
+<text text-anchor="middle" x="2120" y="-657.3" font-family="Times,serif" font-size="14.00" fill="#000000">0</text>
+<polyline fill="none" stroke="#ffa500" stroke-width="3" points="2108.5,-647 2131.5,-647 "/>
+<text text-anchor="middle" x="2120" y="-628.8" font-family="Times,serif" font-size="14.00" fill="#000000">1</text>
+<polyline fill="none" stroke="#ffa500" stroke-width="3" points="2108.5,-618 2131.5,-618 "/>
+<text text-anchor="middle" x="2120" y="-599.8" font-family="Times,serif" font-size="14.00" fill="#000000">2</text>
+</g>
+<!-- CI0401L -->
+<g id="node60" class="node">
+<title>CI0401L</title>
+<polygon fill="none" stroke="#00ff00" stroke-width="3" points="2150,-589 2150,-675 2304,-675 2304,-589 2150,-589"/>
+<text text-anchor="middle" x="2215.5" y="-657.3" font-family="Times,serif" font-size="14.00" fill="#000000">CI0401&#45;L</text>
+<polyline fill="none" stroke="#00ff00" stroke-width="3" points="2150,-647 2281,-647 "/>
+<text text-anchor="middle" x="2215.5" y="-629.3" font-family="Times,serif" font-size="14.00" fill="#000000">Laboratorio</text>
+<text text-anchor="middle" x="2215.5" y="-614.3" font-family="Times,serif" font-size="14.00" fill="#000000">de</text>
+<text text-anchor="middle" x="2215.5" y="-599.3" font-family="Times,serif" font-size="14.00" fill="#000000">Control Analógico II</text>
+<polyline fill="none" stroke="#00ff00" stroke-width="3" points="2281,-589 2281,-675 "/>
+<text text-anchor="middle" x="2292.5" y="-657.3" font-family="Times,serif" font-size="14.00" fill="#000000">0</text>
+<polyline fill="none" stroke="#00ff00" stroke-width="3" points="2281,-647 2304,-647 "/>
+<text text-anchor="middle" x="2292.5" y="-628.8" font-family="Times,serif" font-size="14.00" fill="#000000">2</text>
+<polyline fill="none" stroke="#00ff00" stroke-width="3" points="2281,-618 2304,-618 "/>
+<text text-anchor="middle" x="2292.5" y="-599.8" font-family="Times,serif" font-size="14.00" fill="#000000">4</text>
+</g>
+<!-- IA7200L -->
+<g id="node61" class="node">
+<title>IA7200L</title>
+<polygon fill="none" stroke="#ffa500" stroke-width="3" points="2322,-589 2322,-675 2442,-675 2442,-589 2322,-589"/>
+<text text-anchor="middle" x="2370.5" y="-653.8" font-family="Times,serif" font-size="14.00" fill="#000000">IA7200&#45;L</text>
+<polyline fill="none" stroke="#ffa500" stroke-width="3" points="2322,-640 2419,-640 "/>
+<text text-anchor="middle" x="2370.5" y="-618.3" font-family="Times,serif" font-size="14.00" fill="#000000">Laboratorio</text>
+<text text-anchor="middle" x="2370.5" y="-603.3" font-family="Times,serif" font-size="14.00" fill="#000000">de Graficación</text>
+<polyline fill="none" stroke="#ffa500" stroke-width="3" points="2419,-589 2419,-675 "/>
+<text text-anchor="middle" x="2430.5" y="-657.3" font-family="Times,serif" font-size="14.00" fill="#000000">0</text>
+<polyline fill="none" stroke="#ffa500" stroke-width="3" points="2419,-647 2442,-647 "/>
+<text text-anchor="middle" x="2430.5" y="-628.8" font-family="Times,serif" font-size="14.00" fill="#000000">3</text>
+<polyline fill="none" stroke="#ffa500" stroke-width="3" points="2419,-618 2442,-618 "/>
+<text text-anchor="middle" x="2430.5" y="-599.8" font-family="Times,serif" font-size="14.00" fill="#000000">6</text>
+</g>
+<!-- IA7400T&#45;&gt;CI7200T -->
+<g id="edge61" class="edge">
+<title>IA7400T&#45;&gt;CI7200T</title>
+<path fill="none" stroke="#000000" d="M850.8165,-588.6419C862.6346,-547.858 884.7337,-486.7621 920,-443.5 943.7076,-414.4173 977.8389,-390.1536 1007.2465,-372.6496"/>
+<polygon fill="#000000" stroke="#000000" points="1009.322,-375.4914 1016.2046,-367.4365 1005.8011,-369.4413 1009.322,-375.4914"/>
+</g>
+<!-- IA7500L -->
+<g id="node65" class="node">
+<title>IA7500L</title>
+<polygon fill="none" stroke="#ffa500" stroke-width="3" points="1785.5,-444 1785.5,-530 1888.5,-530 1888.5,-444 1785.5,-444"/>
+<text text-anchor="middle" x="1825.5" y="-512.3" font-family="Times,serif" font-size="14.00" fill="#000000">IA7500&#45;L</text>
+<polyline fill="none" stroke="#ffa500" stroke-width="3" points="1785.5,-502 1865.5,-502 "/>
+<text text-anchor="middle" x="1825.5" y="-484.3" font-family="Times,serif" font-size="14.00" fill="#000000">Laboratorio</text>
+<text text-anchor="middle" x="1825.5" y="-469.3" font-family="Times,serif" font-size="14.00" fill="#000000">de Bases</text>
+<text text-anchor="middle" x="1825.5" y="-454.3" font-family="Times,serif" font-size="14.00" fill="#000000">de Datos</text>
+<polyline fill="none" stroke="#ffa500" stroke-width="3" points="1865.5,-444 1865.5,-530 "/>
+<text text-anchor="middle" x="1877" y="-512.3" font-family="Times,serif" font-size="14.00" fill="#000000">0</text>
+<polyline fill="none" stroke="#ffa500" stroke-width="3" points="1865.5,-502 1888.5,-502 "/>
+<text text-anchor="middle" x="1877" y="-483.8" font-family="Times,serif" font-size="14.00" fill="#000000">2</text>
+<polyline fill="none" stroke="#ffa500" stroke-width="3" points="1865.5,-473 1888.5,-473 "/>
+<text text-anchor="middle" x="1877" y="-454.8" font-family="Times,serif" font-size="14.00" fill="#000000">4</text>
+</g>
+<!-- IA7600L -->
+<g id="node66" class="node">
+<title>IA7600L</title>
+<polygon fill="none" stroke="#ffa500" stroke-width="3" points="1907,-444 1907,-530 2043,-530 2043,-444 1907,-444"/>
+<text text-anchor="middle" x="1963.5" y="-512.3" font-family="Times,serif" font-size="14.00" fill="#000000">IA7600&#45;L</text>
+<polyline fill="none" stroke="#ffa500" stroke-width="3" points="1907,-502 2020,-502 "/>
+<text text-anchor="middle" x="1963.5" y="-484.3" font-family="Times,serif" font-size="14.00" fill="#000000">Laboratorio</text>
+<text text-anchor="middle" x="1963.5" y="-469.3" font-family="Times,serif" font-size="14.00" fill="#000000">de Redes</text>
+<text text-anchor="middle" x="1963.5" y="-454.3" font-family="Times,serif" font-size="14.00" fill="#000000">de Computadoras</text>
+<polyline fill="none" stroke="#ffa500" stroke-width="3" points="2020,-444 2020,-530 "/>
+<text text-anchor="middle" x="2031.5" y="-512.3" font-family="Times,serif" font-size="14.00" fill="#000000">0</text>
+<polyline fill="none" stroke="#ffa500" stroke-width="3" points="2020,-502 2043,-502 "/>
+<text text-anchor="middle" x="2031.5" y="-483.8" font-family="Times,serif" font-size="14.00" fill="#000000">3</text>
+<polyline fill="none" stroke="#ffa500" stroke-width="3" points="2020,-473 2043,-473 "/>
+<text text-anchor="middle" x="2031.5" y="-454.8" font-family="Times,serif" font-size="14.00" fill="#000000">6</text>
+</g>
+<!-- OC0400T -->
+<g id="node69" class="node">
+<title>OC0400T</title>
+<polygon fill="none" stroke="#a52a2a" stroke-width="3" points="1654,-299 1654,-385 1778,-385 1778,-299 1654,-299"/>
+<text text-anchor="middle" x="1704.5" y="-359.8" font-family="Times,serif" font-size="14.00" fill="#000000">OC0400&#45;T</text>
+<polyline fill="none" stroke="#a52a2a" stroke-width="3" points="1654,-342 1755,-342 "/>
+<text text-anchor="middle" x="1704.5" y="-316.8" font-family="Times,serif" font-size="14.00" fill="#000000">Administración</text>
+<polyline fill="none" stroke="#a52a2a" stroke-width="3" points="1755,-299 1755,-385 "/>
+<text text-anchor="middle" x="1766.5" y="-367.3" font-family="Times,serif" font-size="14.00" fill="#000000">3</text>
+<polyline fill="none" stroke="#a52a2a" stroke-width="3" points="1755,-357 1778,-357 "/>
+<text text-anchor="middle" x="1766.5" y="-338.8" font-family="Times,serif" font-size="14.00" fill="#000000">0</text>
+<polyline fill="none" stroke="#a52a2a" stroke-width="3" points="1755,-328 1778,-328 "/>
+<text text-anchor="middle" x="1766.5" y="-309.8" font-family="Times,serif" font-size="14.00" fill="#000000">6</text>
+</g>
+<!-- CS0200T -->
+<g id="node71" class="node">
+<title>CS0200T</title>
+<polygon fill="none" stroke="#0000ff" stroke-width="3" points="1796.5,-299 1796.5,-385 1897.5,-385 1897.5,-299 1796.5,-299"/>
+<text text-anchor="middle" x="1835.5" y="-363.8" font-family="Times,serif" font-size="14.00" fill="#000000">CS0200&#45;T</text>
+<polyline fill="none" stroke="#0000ff" stroke-width="3" points="1796.5,-350 1874.5,-350 "/>
+<text text-anchor="middle" x="1835.5" y="-328.3" font-family="Times,serif" font-size="14.00" fill="#000000">Ética</text>
+<text text-anchor="middle" x="1835.5" y="-313.3" font-family="Times,serif" font-size="14.00" fill="#000000">Profesional</text>
+<polyline fill="none" stroke="#0000ff" stroke-width="3" points="1874.5,-299 1874.5,-385 "/>
+<text text-anchor="middle" x="1886" y="-367.3" font-family="Times,serif" font-size="14.00" fill="#000000">3</text>
+<polyline fill="none" stroke="#0000ff" stroke-width="3" points="1874.5,-357 1897.5,-357 "/>
+<text text-anchor="middle" x="1886" y="-338.8" font-family="Times,serif" font-size="14.00" fill="#000000">0</text>
+<polyline fill="none" stroke="#0000ff" stroke-width="3" points="1874.5,-328 1897.5,-328 "/>
+<text text-anchor="middle" x="1886" y="-309.8" font-family="Times,serif" font-size="14.00" fill="#000000">6</text>
+</g>
+<!-- IA3400L -->
+<g id="node72" class="node">
+<title>IA3400L</title>
+<polygon fill="none" stroke="#ffa500" stroke-width="3" points="1915.5,-299 1915.5,-385 2018.5,-385 2018.5,-299 1915.5,-299"/>
+<text text-anchor="middle" x="1955.5" y="-367.3" font-family="Times,serif" font-size="14.00" fill="#000000">IA3400&#45;L</text>
+<polyline fill="none" stroke="#ffa500" stroke-width="3" points="1915.5,-357 1995.5,-357 "/>
+<text text-anchor="middle" x="1955.5" y="-339.3" font-family="Times,serif" font-size="14.00" fill="#000000">Laboratorio</text>
+<text text-anchor="middle" x="1955.5" y="-324.3" font-family="Times,serif" font-size="14.00" fill="#000000">de Control</text>
+<text text-anchor="middle" x="1955.5" y="-309.3" font-family="Times,serif" font-size="14.00" fill="#000000">Digital I</text>
+<polyline fill="none" stroke="#ffa500" stroke-width="3" points="1995.5,-299 1995.5,-385 "/>
+<text text-anchor="middle" x="2007" y="-367.3" font-family="Times,serif" font-size="14.00" fill="#000000">0</text>
+<polyline fill="none" stroke="#ffa500" stroke-width="3" points="1995.5,-357 2018.5,-357 "/>
+<text text-anchor="middle" x="2007" y="-338.8" font-family="Times,serif" font-size="14.00" fill="#000000">1</text>
+<polyline fill="none" stroke="#ffa500" stroke-width="3" points="1995.5,-328 2018.5,-328 "/>
+<text text-anchor="middle" x="2007" y="-309.8" font-family="Times,serif" font-size="14.00" fill="#000000">2</text>
+</g>
+<!-- CI7200L -->
+<g id="node73" class="node">
+<title>CI7200L</title>
+<polygon fill="none" stroke="#00ff00" stroke-width="3" points="2037,-299 2037,-385 2149,-385 2149,-299 2037,-299"/>
+<text text-anchor="middle" x="2078" y="-367.3" font-family="Times,serif" font-size="14.00" fill="#000000">CI7200&#45;L</text>
+<polyline fill="none" stroke="#00ff00" stroke-width="3" points="2037,-357 2119,-357 "/>
+<text text-anchor="middle" x="2078" y="-339.3" font-family="Times,serif" font-size="14.00" fill="#000000">Laboratorio</text>
+<text text-anchor="middle" x="2078" y="-324.3" font-family="Times,serif" font-size="14.00" fill="#000000">de Sistemas</text>
+<text text-anchor="middle" x="2078" y="-309.3" font-family="Times,serif" font-size="14.00" fill="#000000">Operativos</text>
+<polyline fill="none" stroke="#00ff00" stroke-width="3" points="2119,-299 2119,-385 "/>
+<text text-anchor="middle" x="2134" y="-367.3" font-family="Times,serif" font-size="14.00" fill="#000000">0</text>
+<polyline fill="none" stroke="#00ff00" stroke-width="3" points="2119,-357 2149,-357 "/>
+<text text-anchor="middle" x="2134" y="-338.8" font-family="Times,serif" font-size="14.00" fill="#000000">5</text>
+<polyline fill="none" stroke="#00ff00" stroke-width="3" points="2119,-328 2149,-328 "/>
+<text text-anchor="middle" x="2134" y="-309.8" font-family="Times,serif" font-size="14.00" fill="#000000">10</text>
+</g>
+<!-- OC0200T -->
+<g id="node76" class="node">
+<title>OC0200T</title>
+<polygon fill="none" stroke="#a52a2a" stroke-width="3" points="1615.5,-153 1615.5,-239 1724.5,-239 1724.5,-153 1615.5,-153"/>
+<text text-anchor="middle" x="1658.5" y="-213.8" font-family="Times,serif" font-size="14.00" fill="#000000">OC0200&#45;T</text>
+<polyline fill="none" stroke="#a52a2a" stroke-width="3" points="1615.5,-196 1701.5,-196 "/>
+<text text-anchor="middle" x="1658.5" y="-170.8" font-family="Times,serif" font-size="14.00" fill="#000000">Contabilidad</text>
+<polyline fill="none" stroke="#a52a2a" stroke-width="3" points="1701.5,-153 1701.5,-239 "/>
+<text text-anchor="middle" x="1713" y="-221.3" font-family="Times,serif" font-size="14.00" fill="#000000">3</text>
+<polyline fill="none" stroke="#a52a2a" stroke-width="3" points="1701.5,-211 1724.5,-211 "/>
+<text text-anchor="middle" x="1713" y="-192.8" font-family="Times,serif" font-size="14.00" fill="#000000">0</text>
+<polyline fill="none" stroke="#a52a2a" stroke-width="3" points="1701.5,-182 1724.5,-182 "/>
+<text text-anchor="middle" x="1713" y="-163.8" font-family="Times,serif" font-size="14.00" fill="#000000">6</text>
+</g>
+<!-- CS0100T -->
+<g id="node77" class="node">
+<title>CS0100T</title>
+<polygon fill="none" stroke="#0000ff" stroke-width="3" points="1742.5,-153 1742.5,-239 1843.5,-239 1843.5,-153 1742.5,-153"/>
+<text text-anchor="middle" x="1780" y="-221.3" font-family="Times,serif" font-size="14.00" fill="#000000">CS0100&#45;T</text>
+<polyline fill="none" stroke="#0000ff" stroke-width="3" points="1742.5,-211 1817.5,-211 "/>
+<text text-anchor="middle" x="1780" y="-193.3" font-family="Times,serif" font-size="14.00" fill="#000000">Expresión</text>
+<text text-anchor="middle" x="1780" y="-178.3" font-family="Times,serif" font-size="14.00" fill="#000000">Oral</text>
+<text text-anchor="middle" x="1780" y="-163.3" font-family="Times,serif" font-size="14.00" fill="#000000">y Escrita</text>
+<polyline fill="none" stroke="#0000ff" stroke-width="3" points="1817.5,-153 1817.5,-239 "/>
+<text text-anchor="middle" x="1830.5" y="-221.3" font-family="Times,serif" font-size="14.00" fill="#000000">4</text>
+<polyline fill="none" stroke="#0000ff" stroke-width="3" points="1817.5,-211 1843.5,-211 "/>
+<text text-anchor="middle" x="1830.5" y="-192.8" font-family="Times,serif" font-size="14.00" fill="#000000">0</text>
+<polyline fill="none" stroke="#0000ff" stroke-width="3" points="1817.5,-182 1843.5,-182 "/>
+<text text-anchor="middle" x="1830.5" y="-163.8" font-family="Times,serif" font-size="14.00" fill="#000000">8</text>
+</g>
+<!-- IA7700L -->
+<g id="node79" class="node">
+<title>IA7700L</title>
+<polygon fill="none" stroke="#ffa500" stroke-width="3" points="1862,-153 1862,-239 1982,-239 1982,-153 1862,-153"/>
+<text text-anchor="middle" x="1910.5" y="-221.3" font-family="Times,serif" font-size="14.00" fill="#000000">IA7700&#45;L</text>
+<polyline fill="none" stroke="#ffa500" stroke-width="3" points="1862,-211 1959,-211 "/>
+<text text-anchor="middle" x="1910.5" y="-193.3" font-family="Times,serif" font-size="14.00" fill="#000000">Laboratorio</text>
+<text text-anchor="middle" x="1910.5" y="-178.3" font-family="Times,serif" font-size="14.00" fill="#000000">de Inteligencia</text>
+<text text-anchor="middle" x="1910.5" y="-163.3" font-family="Times,serif" font-size="14.00" fill="#000000">Artificial</text>
+<polyline fill="none" stroke="#ffa500" stroke-width="3" points="1959,-153 1959,-239 "/>
+<text text-anchor="middle" x="1970.5" y="-221.3" font-family="Times,serif" font-size="14.00" fill="#000000">0</text>
+<polyline fill="none" stroke="#ffa500" stroke-width="3" points="1959,-211 1982,-211 "/>
+<text text-anchor="middle" x="1970.5" y="-192.8" font-family="Times,serif" font-size="14.00" fill="#000000">3</text>
+<polyline fill="none" stroke="#ffa500" stroke-width="3" points="1959,-182 1982,-182 "/>
+<text text-anchor="middle" x="1970.5" y="-163.8" font-family="Times,serif" font-size="14.00" fill="#000000">6</text>
+</g>
+<!-- OC0500T -->
+<g id="node80" class="node">
+<title>OC0500T</title>
+<polygon fill="none" stroke="#a52a2a" stroke-width="3" points="72.5,-8 72.5,-94 173.5,-94 173.5,-8 72.5,-8"/>
+<text text-anchor="middle" x="110.5" y="-72.8" font-family="Times,serif" font-size="14.00" fill="#000000">OC0500&#45;T</text>
+<polyline fill="none" stroke="#a52a2a" stroke-width="3" points="72.5,-59 148.5,-59 "/>
+<text text-anchor="middle" x="110.5" y="-37.3" font-family="Times,serif" font-size="14.00" fill="#000000">Seminario</text>
+<text text-anchor="middle" x="110.5" y="-22.3" font-family="Times,serif" font-size="14.00" fill="#000000">de Tesis</text>
+<polyline fill="none" stroke="#a52a2a" stroke-width="3" points="148.5,-8 148.5,-94 "/>
+<text text-anchor="middle" x="161" y="-76.3" font-family="Times,serif" font-size="14.00" fill="#000000">4</text>
+<polyline fill="none" stroke="#a52a2a" stroke-width="3" points="148.5,-66 173.5,-66 "/>
+<text text-anchor="middle" x="161" y="-47.8" font-family="Times,serif" font-size="14.00" fill="#000000">0</text>
+<polyline fill="none" stroke="#a52a2a" stroke-width="3" points="148.5,-37 173.5,-37 "/>
+<text text-anchor="middle" x="161" y="-18.8" font-family="Times,serif" font-size="14.00" fill="#000000">8</text>
+</g>
+</g>
+</svg>
