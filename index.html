@@ -53,7 +53,7 @@
         const { useState, useMemo, useEffect } = React;
 
         // ==========================================
-        //  DATOS (Mantenemos tus datos originales)
+        //  DATOS
         // ==========================================
         const PLAN_ESTUDIOS = [
             // Semestre I
@@ -274,6 +274,7 @@
             Minimize: (props) => <Icon {...props} path={<><path d="M8 3v3a2 2 0 0 1-2 2H3"/><path d="M21 8h-3a2 2 0 0 1-2-2V3"/><path d="M3 16h3a2 2 0 0 1 2 2v3"/><path d="M16 21v-3a2 2 0 0 1 2-2h3"/></>} />,
             Star: (props) => <Icon {...props} path={<><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" fill={props.fill || "none"} /></>} />,
             ExternalLink: (props) => <Icon {...props} path={<><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" x2="21" y1="14" y2="3"/></>} />,
+            Map: (props) => <Icon {...props} path={<><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6" /><line x1="8" y1="2" x2="8" y2="18" /><line x1="16" y1="6" x2="16" y2="22" /></>} />,
         };
 
         const SUBJECT_COLORS = [
@@ -350,7 +351,7 @@
 
                     const matchesSubject = selectedSubjectId === 'all' || note.subjectId === selectedSubjectId;
                     const matchesSearch = note.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                                        noteSubject.name.toLowerCase().includes(searchTerm.toLowerCase());
+                                            noteSubject.name.toLowerCase().includes(searchTerm.toLowerCase());
                     return matchesSubject && matchesSearch;
                 });
             }, [currentSemester, selectedSubjectId, searchTerm, viewMode, favorites]);
@@ -401,6 +402,17 @@
                                     </button>
                                 ))}
                             </div>
+
+                            {/* Botón Mapa Curricular */}
+                            <a 
+                                href="computacion.html" 
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="w-full flex items-center justify-center space-x-2 py-2 rounded-lg text-sm font-medium transition-colors mb-2 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 hover:bg-emerald-100 dark:hover:bg-emerald-900/30"
+                            >
+                                <Icons.Map className="w-4 h-4" />
+                                <span>Ver Mapa Curricular</span>
+                            </a>
 
                              {/* Botón Favoritos */}
                              <button 
