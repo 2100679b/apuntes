@@ -1,0 +1,1235 @@
+<!DOCTYPE html>
+
+<html lang="es">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Ingeniería - Mis Apuntes 2.0</title>
+
+    
+
+    <!-- Icono -->
+
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🚀</text></svg>">
+
+    
+
+    <!-- React y ReactDOM -->
+
+    <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+
+    
+
+    <!-- Babel -->
+
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    
+
+    <!-- Tailwind CSS -->
+
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <script>
+
+        tailwind.config = {
+
+            darkMode: 'class',
+
+            theme: {
+
+                extend: {
+
+                    colors: {
+
+                        slate: { 850: '#1e293b', 900: '#0f172a' }
+
+                    }
+
+                }
+
+            }
+
+        }
+
+    </script>
+
+
+
+    <style>
+
+        /* Scrollbar suave y moderna */
+
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+
+        ::-webkit-scrollbar-track { background: transparent; }
+
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+
+        .dark ::-webkit-scrollbar-thumb { background: #475569; }
+
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+        
+
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+
+
+        /* Animaciones suaves */
+
+        .fade-in { animation: fadeIn 0.3s ease-in-out; }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+        
+
+        .iframe-container {
+
+            background-image: radial-gradient(#cbd5e1 1px, transparent 1px);
+
+            background-size: 20px 20px;
+
+        }
+
+        .dark .iframe-container {
+
+            background-image: radial-gradient(#334155 1px, transparent 1px);
+
+        }
+
+    </style>
+
+</head>
+
+<body class="bg-gray-50 text-slate-800 font-sans overflow-hidden transition-colors duration-300">
+
+    <div id="root"></div>
+
+
+
+    <script type="text/babel">
+
+        const { useState, useMemo, useEffect } = React;
+
+
+
+        // ==========================================
+
+        //  DATOS DEL PLAN DE ESTUDIOS
+
+        // ==========================================
+
+        const PLAN_ESTUDIOS = [
+
+            { id: 'algebra', name: 'Álgebra Superior', semester: 'I' },
+
+            { id: 'calculo1', name: 'Cálculo I', semester: 'I' },
+
+            { id: 'fisica1', name: 'Física I', semester: 'I' },
+
+            { id: 'tecnicas', name: 'Técnicas de Estudio', semester: 'I' },
+
+            { id: 'quimica', name: 'Química', semester: 'I' },
+
+            { id: 'ingles1', name: 'Inglés I', semester: 'I' },
+
+            { id: 'lab-fisica1', name: 'Lab. Física I', semester: 'I' },
+
+            { id: 'lab-herra', name: 'Lab. Herramientas Comp.', semester: 'I' },
+
+            { id: 'lab-quimica', name: 'Lab. Química', semester: 'I' },
+
+            { id: 'calculo2', name: 'Cálculo II', semester: 'II' },
+
+            { id: 'fisica2', name: 'Física II', semester: 'II' },
+
+            { id: 'progra', name: 'Programación de Comp.', semester: 'II' },
+
+            { id: 'electronica1', name: 'Electrónica Analógica I', semester: 'II' },
+
+            { id: 'logica', name: 'Lógica', semester: 'II' },
+
+            { id: 'ingles2', name: 'Inglés II', semester: 'II' },
+
+            { id: 'lab-fisica2', name: 'Lab. Física II', semester: 'II' },
+
+            { id: 'lab-progra', name: 'Lab. Programación', semester: 'II' },
+
+            { id: 'lab-electronica1', name: 'Lab. Electrónica A. I', semester: 'II' },
+
+            { id: 'calculo3', name: 'Cálculo III', semester: 'III' },
+
+            { id: 'teoria-electro', name: 'Teoría Electromagnética I', semester: 'III' },
+
+            { id: 'metodos', name: 'Métodos Numéricos', semester: 'III' },
+
+            { id: 'electronica2', name: 'Electrónica Analógica II', semester: 'III' },
+
+            { id: 'termo', name: 'Termodinámica', semester: 'III' },
+
+            { id: 'ingles3', name: 'Inglés III', semester: 'III' },
+
+            { id: 'lab-teoria', name: 'Lab. Teoría Electro.', semester: 'III' },
+
+            { id: 'lab-electronica2', name: 'Lab. Electrónica A. II', semester: 'III' },
+
+            { id: 'lab-termo', name: 'Lab. Termodinámica', semester: 'III' },
+
+            { id: 'calculo4', name: 'Cálculo IV', semester: 'IV' },
+
+            { id: 'circuitos1', name: 'Circuitos Eléctricos I', semester: 'IV' },
+
+            { id: 'discretas', name: 'Matemáticas Discretas', semester: 'IV' },
+
+            { id: 'digital1', name: 'Electrónica Digital I', semester: 'IV' },
+
+            { id: 'estructuras', name: 'Estructuras de Datos', semester: 'IV' },
+
+            { id: 'ing-sw', name: 'Ingeniería de Software', semester: 'IV' },
+
+            { id: 'ingles4', name: 'Inglés IV', semester: 'IV' },
+
+            { id: 'lab-digital1', name: 'Lab. Electrónica Dig. I', semester: 'IV' },
+
+            { id: 'lineal', name: 'Álgebra Lineal', semester: 'V' },
+
+            { id: 'algoritmos', name: 'Análisis de Algoritmos', semester: 'V' },
+
+            { id: 'paradigmas', name: 'Paradigmas de Prog.', semester: 'V' },
+
+            { id: 'proba', name: 'Probabilidad y Est.', semester: 'V' },
+
+            { id: 'control1', name: 'Control Analógico I', semester: 'V' },
+
+            { id: 'lenguajes', name: 'Lenguajes Formales', semester: 'V' },
+
+            { id: 'lab-paradigmas', name: 'Lab. Paradigmas', semester: 'V' },
+
+            { id: 'lab-control1', name: 'Lab. Control A. I', semester: 'V' },
+
+            { id: 'graficacion', name: 'Graficación', semester: 'VI' },
+
+            { id: 'org-comp', name: 'Org. Computadoras', semester: 'VI' },
+
+            { id: 'compiladores', name: 'Compiladores', semester: 'VI' },
+
+            { id: 'control2', name: 'Control Analógico II', semester: 'VI' },
+
+            { id: 'comms1', name: 'Comunicaciones I', semester: 'VI' },
+
+            { id: 'economia', name: 'Economía', semester: 'VI' },
+
+            { id: 'lab-control2', name: 'Lab. Control A. II', semester: 'VI' },
+
+            { id: 'lab-comms', name: 'Lab. Comunicaciones', semester: 'VI' },
+
+            { id: 'lab-graf', name: 'Lab. Graficación', semester: 'VI' },
+
+            { id: 'teoria-comp', name: 'Teoría de la Comp.', semester: 'VII' },
+
+            { id: 'inv-op', name: 'Investigación de Op.', semester: 'VII' },
+
+            { id: 'bd', name: 'Bases de Datos', semester: 'VII' },
+
+            { id: 'redes', name: 'Redes de Computadoras', semester: 'VII' },
+
+            { id: 'temas7', name: 'Tema Selecto Sem VII', semester: 'VII' },
+
+            { id: 'lab-redes', name: 'Lab. Redes', semester: 'VII' },
+
+            { id: 'lab-bd', name: 'Lab. Bases de Datos', semester: 'VII' },
+
+            { id: 'modelos', name: 'Modelos Probabilistas', semester: 'VIII' },
+
+            { id: 'control-dig1', name: 'Control Digital I', semester: 'VIII' },
+
+            { id: 'so', name: 'Sistemas Operativos', semester: 'VIII' },
+
+            { id: 'admin', name: 'Administración', semester: 'VIII' },
+
+            { id: 'etica', name: 'Ética Profesional', semester: 'VIII' },
+
+            { id: 'temas8', name: 'Tema Selecto Sem VIII', semester: 'VIII' },
+
+            { id: 'lab-control-dig1', name: 'Lab. Control Dig. I', semester: 'VIII' },
+
+            { id: 'lab-so', name: 'Lab. Sist. Operativos', semester: 'VIII' },
+
+            { id: 'lab-temas8', name: 'Lab. Tema Selecto', semester: 'VIII' },
+
+            { id: 'expresion', name: 'Expresión Oral y Escrita', semester: 'IX' },
+
+            { id: 'contabilidad', name: 'Contabilidad', semester: 'IX' },
+
+            { id: 'temas9-1', name: 'Tema Selecto 1', semester: 'IX' },
+
+            { id: 'temas9-2', name: 'Tema Selecto 2', semester: 'IX' },
+
+            { id: 'temas9-3', name: 'Tema Selecto 3', semester: 'IX' },
+
+            { id: 'lab-temas9', name: 'Lab. Tema Selecto', semester: 'IX' },
+
+            { id: 'ia', name: 'Inteligencia Artificial', semester: 'IX' },
+
+            { id: 'lab-ia', name: 'Lab. IA', semester: 'IX' },
+
+            { id: 'tesis', name: 'Seminario de Tesis', semester: 'X' },
+
+        ];
+
+
+
+        const MIS_DOCUMENTOS = [
+
+            { id: 'doc-alg', subjectId: 'algebra', title: 'Apuntes de Álgebra Superior', pdfUrl: './Algebra_Superior.pdf', type: 'apuntes' },
+
+            { id: 'doc-cal1', subjectId: 'calculo1', title: 'Apuntes de Cálculo I', pdfUrl: './Calculo_I.pdf', type: 'apuntes' },
+
+            { id: 'doc-fis1', subjectId: 'fisica1', title: 'Apuntes de Física I', pdfUrl: './Fisica_I.pdf', type: 'apuntes' },
+
+            { id: 'doc-tec', subjectId: 'tecnicas', title: 'Apuntes de Técnicas de Estudio', pdfUrl: './Tecnicas_Estudio.pdf', type: 'apuntes' },
+
+            { id: 'doc-qui', subjectId: 'quimica', title: 'Apuntes de Química', pdfUrl: './Quimica.pdf', type: 'apuntes' },
+
+            { id: 'doc-ing1', subjectId: 'ingles1', title: 'Apuntes de Inglés I', pdfUrl: './Ingles_I.pdf', type: 'apuntes' },
+
+            { id: 'doc-lfi1', subjectId: 'lab-fisica1', title: 'Manual Lab. Física I', pdfUrl: './Lab_Fisica_I.pdf', type: 'apuntes' },
+
+            { id: 'doc-lhe', subjectId: 'lab-herra', title: 'Manual Lab. Herramientas', pdfUrl: './Lab_Herramientas.pdf', type: 'apuntes' },
+
+            { id: 'doc-lqu', subjectId: 'lab-quimica', title: 'Manual Lab. Química', pdfUrl: './Lab_Quimica.pdf', type: 'apuntes' },
+
+            { id: 'doc-cal2', subjectId: 'calculo2', title: 'Apuntes de Cálculo II', pdfUrl: './Calculo_II.pdf', type: 'apuntes' },
+
+            { id: 'doc-fis2', subjectId: 'fisica2', title: 'Apuntes de Física II', pdfUrl: './Fisica_II.pdf', type: 'apuntes' },
+
+            { id: 'doc-pro', subjectId: 'progra', title: 'Apuntes de Programación', pdfUrl: './Programacion.pdf', type: 'apuntes' },
+
+            { id: 'doc-ele1', subjectId: 'electronica1', title: 'Apuntes de Electrónica I', pdfUrl: './Electronica_I.pdf', type: 'apuntes' },
+
+            { id: 'doc-log', subjectId: 'logica', title: 'Apuntes de Lógica', pdfUrl: './Logica.pdf', type: 'apuntes' },
+
+            { id: 'doc-ing2', subjectId: 'ingles2', title: 'Apuntes de Inglés II', pdfUrl: './Ingles_II.pdf', type: 'apuntes' },
+
+            { id: 'doc-lfi2', subjectId: 'lab-fisica2', title: 'Manual Lab. Física II', pdfUrl: './Lab_Fisica_II.pdf', type: 'apuntes' },
+
+            { id: 'doc-lpr', subjectId: 'lab-progra', title: 'Manual Lab. Programación', pdfUrl: './Lab_Programacion.pdf', type: 'apuntes' },
+
+            { id: 'doc-lel1', subjectId: 'lab-electronica1', title: 'Manual Lab. Electrónica I', pdfUrl: './Lab_Electronica_I.pdf', type: 'apuntes' },
+
+            { id: 'doc-est', subjectId: 'estructuras', title: 'Libro: Estructuras de Datos en C++', pdfUrl: './9788448140779.pdf', type: 'apuntes' },
+
+            { id: 'doc-len', subjectId: 'lenguajes', title: 'Apuntes Lenguajes Formales', pdfUrl: './notas_lfya.pdf', type: 'apuntes' }, 
+
+            
+
+            // Ejemplos de exámenes - puedes agregar los tuyos aquí
+
+            { id: 'exam-alg-p1', subjectId: 'algebra', title: 'Parcial 1', pdfUrl: './examenes/algebra_p1.pdf', type: 'examen', parcial: 1 },
+
+            { id: 'exam-alg-p2', subjectId: 'algebra', title: 'Parcial 2', pdfUrl: './examenes/algebra_p2.pdf', type: 'examen', parcial: 2 },
+
+            { id: 'exam-cal1-p1', subjectId: 'calculo1', title: 'Parcial 1', pdfUrl: './examenes/calculo1_p1.pdf', type: 'examen', parcial: 1 },
+
+        ];
+
+
+
+        // --- Iconos Inline ---
+
+        const Icon = ({ path, className }) => (
+
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+
+                {path}
+
+            </svg>
+
+        );
+
+
+
+        const Icons = {
+
+            Rocket: (props) => <Icon {...props} path={<><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/><path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"/><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"/><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"/></>} />,
+
+            X: (props) => <Icon {...props} path={<><path d="M18 6 6 18"/><path d="m6 6 12 12"/></>} />,
+
+            Search: (props) => <Icon {...props} path={<><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></>} />,
+
+            Folder: (props) => <Icon {...props} path={<><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"/></>} />,
+
+            FileText: (props) => <Icon {...props} path={<><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><line x1="16" x2="8" y1="13" y2="13"/><line x1="16" x2="8" y1="17" y2="17"/><line x1="10" x2="8" y1="9" y2="9"/></>} />,
+
+            Menu: (props) => <Icon {...props} path={<><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/></>} />,
+
+            Moon: (props) => <Icon {...props} path={<><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></>} />,
+
+            Sun: (props) => <Icon {...props} path={<><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></>} />,
+
+            Maximize: (props) => <Icon {...props} path={<><path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/><path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/></>} />,
+
+            Minimize: (props) => <Icon {...props} path={<><path d="M8 3v3a2 2 0 0 1-2 2H3"/><path d="M21 8h-3a2 2 0 0 1-2-2V3"/><path d="M3 16h3a2 2 0 0 1 2 2v3"/><path d="M16 21v-3a2 2 0 0 1 2-2h3"/></>} />,
+
+            Star: (props) => <Icon {...props} path={<><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" fill={props.fill || "none"} /></>} />,
+
+            ExternalLink: (props) => <Icon {...props} path={<><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" x2="21" y1="14" y2="3"/></>} />,
+
+            Map: (props) => <Icon {...props} path={<><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6" /><line x1="8" y1="2" x2="8" y2="18" /><line x1="16" y1="6" x2="16" y2="22" /></>} />,
+
+            ClipboardList: (props) => <Icon {...props} path={<><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M9 12h6"/><path d="M9 16h6"/></>} />,
+
+            ChevronDown: (props) => <Icon {...props} path={<><path d="m6 9 6 6 6-6"/></>} />,
+
+            ChevronRight: (props) => <Icon {...props} path={<><path d="m9 18 6-6-6-6"/></>} />,
+
+        };
+
+
+
+        const SUBJECT_COLORS = [
+
+            { bg: 'bg-blue-100 dark:bg-blue-900/30', text: 'text-blue-700 dark:text-blue-300', border: 'border-blue-200 dark:border-blue-800' },
+
+            { bg: 'bg-emerald-100 dark:bg-emerald-900/30', text: 'text-emerald-700 dark:text-emerald-300', border: 'border-emerald-200 dark:border-emerald-800' },
+
+            { bg: 'bg-orange-100 dark:bg-orange-900/30', text: 'text-orange-700 dark:text-orange-300', border: 'border-orange-200 dark:border-orange-800' },
+
+            { bg: 'bg-purple-100 dark:bg-purple-900/30', text: 'text-purple-700 dark:text-purple-300', border: 'border-purple-200 dark:border-purple-800' },
+
+            { bg: 'bg-pink-100 dark:bg-pink-900/30', text: 'text-pink-700 dark:text-pink-300', border: 'border-pink-200 dark:border-pink-800' },
+
+            { bg: 'bg-cyan-100 dark:bg-cyan-900/30', text: 'text-cyan-700 dark:text-cyan-300', border: 'border-cyan-200 dark:border-cyan-800' },
+
+        ];
+
+
+
+        const SEMESTERS = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X'];
+
+
+
+        function App() {
+
+            const [currentSemester, setCurrentSemester] = useState(() => localStorage.getItem('semestre') || 'I');
+
+            const [selectedSubjectId, setSelectedSubjectId] = useState('all');
+
+            const [selectedNoteId, setSelectedNoteId] = useState(null);
+
+            const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+
+            const [searchTerm, setSearchTerm] = useState('');
+
+            const [isFullscreen, setIsFullscreen] = useState(false);
+
+            const [darkMode, setDarkMode] = useState(() => localStorage.getItem('theme') === 'dark');
+
+            const [favorites, setFavorites] = useState(() => JSON.parse(localStorage.getItem('favorites')) || []);
+
+            const [viewMode, setViewMode] = useState('list'); 
+
+            const [expandedSubjects, setExpandedSubjects] = useState({});
+
+
+
+            useEffect(() => {
+
+                if (darkMode) {
+
+                    document.documentElement.classList.add('dark');
+
+                    localStorage.setItem('theme', 'dark');
+
+                } else {
+
+                    document.documentElement.classList.remove('dark');
+
+                    localStorage.setItem('theme', 'light');
+
+                }
+
+            }, [darkMode]);
+
+
+
+            useEffect(() => {
+
+                localStorage.setItem('semestre', currentSemester);
+
+            }, [currentSemester]);
+
+
+
+            useEffect(() => {
+
+                localStorage.setItem('favorites', JSON.stringify(favorites));
+
+            }, [favorites]);
+
+
+
+            const subjectsWithColors = useMemo(() => {
+
+                return PLAN_ESTUDIOS.map((sub, index) => ({
+
+                    ...sub,
+
+                    colorIndex: index % SUBJECT_COLORS.length
+
+                }));
+
+            }, []);
+
+
+
+            const getSubject = (id) => subjectsWithColors.find(s => s.id === id);
+
+            
+
+            const toggleFavorite = (e, noteId) => {
+
+                e.stopPropagation();
+
+                setFavorites(prev => 
+
+                    prev.includes(noteId) ? prev.filter(id => id !== noteId) : [...prev, noteId]
+
+                );
+
+            };
+
+
+
+            const toggleSubjectExpand = (subjectId) => {
+
+                setExpandedSubjects(prev => ({
+
+                    ...prev,
+
+                    [subjectId]: !prev[subjectId]
+
+                }));
+
+            };
+
+
+
+            const visibleSubjects = subjectsWithColors.filter(s => s.semester === currentSemester);
+
+            
+
+            const filteredNotes = useMemo(() => {
+
+                if (viewMode === 'favorites') {
+
+                    return MIS_DOCUMENTOS.filter(n => favorites.includes(n.id))
+
+                        .filter(n => n.title.toLowerCase().includes(searchTerm.toLowerCase()));
+
+                }
+
+
+
+                return MIS_DOCUMENTOS.filter(note => {
+
+                    const noteSubject = getSubject(note.subjectId);
+
+                    if (!noteSubject) return false;
+
+                    if (noteSubject.semester !== currentSemester) return false;
+
+
+
+                    const matchesSubject = selectedSubjectId === 'all' || note.subjectId === selectedSubjectId;
+
+                    const matchesSearch = note.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
+
+                                          noteSubject.name.toLowerCase().includes(searchTerm.toLowerCase());
+
+                    return matchesSubject && matchesSearch;
+
+                });
+
+            }, [currentSemester, selectedSubjectId, searchTerm, viewMode, favorites]);
+
+
+
+            // Agrupar documentos por materia
+
+            const documentsBySubject = useMemo(() => {
+
+                const grouped = {};
+
+                visibleSubjects.forEach(subject => {
+
+                    const docs = MIS_DOCUMENTOS.filter(doc => 
+
+                        doc.subjectId === subject.id && 
+
+                        (selectedSubjectId === 'all' || doc.subjectId === selectedSubjectId) &&
+
+                        (doc.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
+
+                         subject.name.toLowerCase().includes(searchTerm.toLowerCase()))
+
+                    );
+
+                    
+
+                    if (docs.length > 0 || selectedSubjectId === subject.id) {
+
+                        grouped[subject.id] = {
+
+                            subject,
+
+                            apuntes: docs.filter(d => d.type === 'apuntes'),
+
+                            examenes: docs.filter(d => d.type === 'examen').sort((a, b) => a.parcial - b.parcial)
+
+                        };
+
+                    }
+
+                });
+
+                return grouped;
+
+            }, [visibleSubjects, selectedSubjectId, searchTerm]);
+
+
+
+            const activeNoteData = MIS_DOCUMENTOS.find(n => n.id === selectedNoteId);
+
+
+
+            return (
+
+                <div className="flex h-screen bg-gray-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100 font-sans overflow-hidden">
+
+                    
+
+                    {/* --- SIDEBAR --- */}
+
+                    <aside className={`fixed inset-y-0 left-0 z-30 w-80 bg-white dark:bg-slate-800 border-r border-gray-200 dark:border-slate-700 transform transition-all duration-300 ease-in-out ${isSidebarOpen ? 'translate-x-0 shadow-xl md:shadow-none' : '-translate-x-full'} md:relative md:translate-x-0 flex flex-col`}>
+
+                        <div className="p-5 border-b border-gray-100 dark:border-slate-700 bg-white dark:bg-slate-800 z-10">
+
+                            <div className="flex items-center justify-between mb-5">
+
+                                <div className="flex items-center space-x-3 text-indigo-600 dark:text-indigo-400 font-extrabold text-xl tracking-tight">
+
+                                    <Icons.Rocket className="w-7 h-7" />
+
+                                    <span>Ingeniería</span>
+
+                                </div>
+
+                                <div className="flex items-center gap-2">
+
+                                    <button onClick={() => setDarkMode(!darkMode)} className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-slate-700 text-gray-500 dark:text-slate-400 transition-colors">
+
+                                        {darkMode ? <Icons.Sun className="w-5 h-5" /> : <Icons.Moon className="w-5 h-5" />}
+
+                                    </button>
+
+                                    <button onClick={() => setIsSidebarOpen(false)} className="md:hidden p-2 rounded-full hover:bg-gray-100 text-gray-500">
+
+                                        <Icons.X className="w-5 h-5" />
+
+                                    </button>
+
+                                </div>
+
+                            </div>
+
+
+
+                            <div className="flex space-x-1 bg-gray-100 dark:bg-slate-700 p-1 rounded-xl overflow-x-auto hide-scrollbar mb-4">
+
+                                {SEMESTERS.map(sem => (
+
+                                    <button
+
+                                        key={sem}
+
+                                        onClick={() => {
+
+                                            setCurrentSemester(sem);
+
+                                            setSelectedSubjectId('all');
+
+                                            setViewMode('list');
+
+                                        }}
+
+                                        className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap flex-shrink-0 ${
+
+                                            currentSemester === sem && viewMode === 'list'
+
+                                                ? 'bg-white dark:bg-slate-600 text-indigo-600 dark:text-indigo-300 shadow-sm' 
+
+                                                : 'text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-200'
+
+                                        }`}
+
+                                    >
+
+                                        {sem}
+
+                                    </button>
+
+                                ))}
+
+                            </div>
+
+
+
+                            <button 
+
+                                onClick={() => setViewMode(viewMode === 'favorites' ? 'list' : 'favorites')}
+
+                                className={`w-full flex items-center justify-center space-x-2 py-2 rounded-lg text-sm font-medium transition-colors mb-4 ${
+
+                                    viewMode === 'favorites' 
+
+                                    ? 'bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-800' 
+
+                                    : 'bg-gray-50 dark:bg-slate-700 text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-600 border border-transparent'
+
+                                }`}
+
+                            >
+
+                                <Icons.Star className="w-4 h-4" fill={viewMode === 'favorites' ? "currentColor" : "none"} />
+
+                                <span>Favoritos ({favorites.length})</span>
+
+                            </button>
+
+
+
+                            <div className="relative">
+
+                                <span className="absolute left-3 top-2.5 w-4 h-4 text-gray-400"><Icons.Search className="w-4 h-4" /></span>
+
+                                <input 
+
+                                    type="text" 
+
+                                    placeholder="Buscar documento..." 
+
+                                    className="w-full pl-9 pr-4 py-2 bg-gray-50 dark:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:text-slate-200 transition-all placeholder-gray-400"
+
+                                    value={searchTerm}
+
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+
+                                />
+
+                            </div>
+
+                        </div>
+
+
+
+                        <div className="flex-1 overflow-y-auto px-3 pb-4 space-y-4 pt-4 custom-scrollbar">
+
+                            {viewMode === 'list' && (
+
+                                <div className="fade-in">
+
+                                    <h3 className="px-2 text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider mb-2">Materias</h3>
+
+                                    <div className="space-y-1">
+
+                                        <button 
+
+                                            onClick={() => setSelectedSubjectId('all')}
+
+                                            className={`w-full flex items-center space-x-3 px-3 py-2 rounded-lg text-sm transition-all ${
+
+                                                selectedSubjectId === 'all' 
+
+                                                ? 'bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 font-medium' 
+
+                                                : 'text-gray-600 dark:text-slate-400 hover:bg-gray-50 dark:hover:bg-slate-700'
+
+                                            }`}
+
+                                        >
+
+                                            <Icons.Folder className="w-4 h-4 opacity-70" />
+
+                                            <span>Todas</span>
+
+                                        </button>
+
+                                        
+
+                                        {visibleSubjects.map(subject => {
+
+                                            const subjectDocs = documentsBySubject[subject.id];
+
+                                            const hasExams = subjectDocs && subjectDocs.examenes.length > 0;
+
+                                            const isExpanded = expandedSubjects[subject.id];
+
+                                            
+
+                                            return (
+
+                                                <div key={subject.id}>
+
+                                                    <button 
+
+                                                        onClick={() => setSelectedSubjectId(subject.id)}
+
+                                                        className={`w-full text-left flex items-center justify-between px-3 py-2 rounded-lg text-sm transition-all ${
+
+                                                            selectedSubjectId === subject.id 
+
+                                                            ? 'bg-gray-100 dark:bg-slate-700 text-slate-900 dark:text-slate-100 font-medium' 
+
+                                                            : 'text-gray-600 dark:text-slate-400 hover:bg-gray-50 dark:hover:bg-slate-700'
+
+                                                        }`}
+
+                                                    >
+
+                                                        <div className="flex items-center space-x-3 truncate flex-1">
+
+                                                            <div className={`flex-shrink-0 w-2 h-2 rounded-full ${SUBJECT_COLORS[subject.colorIndex].bg.split(' ')[0]}`}></div>
+
+                                                            <span className="truncate">{subject.name}</span>
+
+                                                        </div>
+
+                                                        {hasExams && (
+
+                                                            <button
+
+                                                                onClick={(e) => {
+
+                                                                    e.stopPropagation();
+
+                                                                    toggleSubjectExpand(subject.id);
+
+                                                                }}
+
+                                                                className="ml-2 p-0.5 hover:bg-gray-200 dark:hover:bg-slate-600 rounded transition-colors"
+
+                                                            >
+
+                                                                {isExpanded ? <Icons.ChevronDown className="w-3.5 h-3.5" /> : <Icons.ChevronRight className="w-3.5 h-3.5" />}
+
+                                                            </button>
+
+                                                        )}
+
+                                                    </button>
+
+                                                    
+
+                                                    {/* Sección de exámenes expandible */}
+
+                                                    {hasExams && isExpanded && (
+
+                                                        <div className="ml-6 mt-1 space-y-1 fade-in">
+
+                                                            {[1, 2, 3, 4].map(parcialNum => {
+
+                                                                const exam = subjectDocs.examenes.find(e => e.parcial === parcialNum);
+
+                                                                return (
+
+                                                                    <button
+
+                                                                        key={`${subject.id}-p${parcialNum}`}
+
+                                                                        onClick={() => exam && setSelectedNoteId(exam.id)}
+
+                                                                        disabled={!exam}
+
+                                                                        className={`w-full text-left flex items-center space-x-2 px-3 py-1.5 rounded-lg text-xs transition-all ${
+
+                                                                            exam && selectedNoteId === exam.id
+
+                                                                            ? 'bg-rose-50 dark:bg-rose-900/20 text-rose-700 dark:text-rose-300 font-medium'
+
+                                                                            : exam 
+
+                                                                            ? 'text-gray-500 dark:text-slate-400 hover:bg-gray-50 dark:hover:bg-slate-700'
+
+                                                                            : 'text-gray-300 dark:text-slate-600 cursor-not-allowed'
+
+                                                                        }`}
+
+                                                                    >
+
+                                                                        <Icons.ClipboardList className="w-3 h-3" />
+
+                                                                        <span>Parcial {parcialNum}</span>
+
+                                                                        {!exam && <span className="text-[9px] opacity-50">(Sin archivo)</span>}
+
+                                                                    </button>
+
+                                                                );
+
+                                                            })}
+
+                                                        </div>
+
+                                                    )}
+
+                                                </div>
+
+                                            );
+
+                                        })}
+
+                                    </div>
+
+                                </div>
+
+                            )}
+
+
+
+                            <div className="fade-in pt-2">
+
+                                <h3 className="px-2 text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider mb-2 border-t border-gray-100 dark:border-slate-700 pt-4">
+
+                                    {viewMode === 'favorites' ? 'Tus Favoritos' : 'Archivos Disponibles'}
+
+                                </h3>
+
+                                
+
+                                <div className="space-y-2">
+
+                                    {filteredNotes.length === 0 ? (
+
+                                        <div className="text-center py-8 px-4 rounded-xl border-2 border-dashed border-gray-200 dark:border-slate-700">
+
+                                            <p className="text-xs text-gray-400 dark:text-slate-500">
+
+                                                No hay documentos aquí.
+
+                                            </p>
+
+                                        </div>
+
+                                    ) : (
+
+                                        filteredNotes.map(note => {
+
+                                            const subject = getSubject(note.subjectId);
+
+                                            const color = subject ? SUBJECT_COLORS[subject.colorIndex] : SUBJECT_COLORS[0];
+
+                                            const isFav = favorites.includes(note.id);
+
+                                            const isSelected = selectedNoteId === note.id;
+
+                                            const isExam = note.type === 'examen';
+
+                                            
+
+                                            return (
+
+                                                <div 
+
+                                                    key={note.id}
+
+                                                    onClick={() => {
+
+                                                        setSelectedNoteId(note.id);
+
+                                                        if (window.innerWidth < 768) setIsSidebarOpen(false);
+
+                                                    }}
+
+                                                    className={`group relative p-3 rounded-xl border transition-all cursor-pointer hover:shadow-md ${
+
+                                                        isSelected
+
+                                                        ? 'bg-white dark:bg-slate-700 border-indigo-500 dark:border-indigo-400 ring-1 ring-indigo-200 dark:ring-indigo-900' 
+
+                                                        : 'bg-white dark:bg-slate-800 border-gray-100 dark:border-slate-700 hover:border-indigo-200 dark:hover:border-slate-600'
+
+                                                    }`}
+
+                                                >
+
+                                                    <div className="flex justify-between items-start mb-1.5">
+
+                                                        <div className="flex items-center gap-1.5 flex-wrap max-w-[85%]">
+
+                                                            <span className={`text-[9px] px-2 py-0.5 rounded-md font-bold uppercase tracking-wide truncate border ${color.bg} ${color.text} ${color.border}`}>
+
+                                                                {subject ? subject.name : 'General'}
+
+                                                            </span>
+
+                                                            {isExam && (
+
+                                                                <span className="text-[9px] px-2 py-0.5 rounded-md font-bold bg-rose-100 dark:bg-rose-900/30 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800">
+
+                                                                    EXAMEN
+
+                                                                </span>
+
+                                                            )}
+
+                                                        </div>
+
+                                                        <button 
+
+                                                            onClick={(e) => toggleFavorite(e, note.id)}
+
+                                                            className={`p-1 rounded-full transition-all ${isFav ? 'text-amber-400 hover:text-amber-500' : 'text-gray-300 dark:text-slate-600 hover:text-amber-400'}`}
+
+                                                        >
+
+                                                            <Icons.Star className="w-3.5 h-3.5" fill={isFav ? "currentColor" : "none"} />
+
+                                                        </button>
+
+                                                    </div>
+
+                                                    <div className="flex items-center space-x-2">
+
+                                                        {isExam ? (
+
+                                                            <Icons.ClipboardList className={`w-4 h-4 flex-shrink-0 transition-colors ${isSelected ? 'text-rose-500' : 'text-gray-400 dark:text-slate-500 group-hover:text-rose-400'}`} />
+
+                                                        ) : (
+
+                                                            <Icons.FileText className={`w-4 h-4 flex-shrink-0 transition-colors ${isSelected ? 'text-indigo-500' : 'text-gray-400 dark:text-slate-500 group-hover:text-indigo-400'}`} />
+
+                                                        )}
+
+                                                        <h4 className={`text-sm font-medium line-clamp-2 leading-snug ${isSelected ? 'text-slate-800 dark:text-white' : 'text-slate-600 dark:text-slate-300'}`}>
+
+                                                            {note.title}
+
+                                                        </h4>
+
+                                                    </div>
+
+                                                </div>
+
+                                            );
+
+                                        })
+
+                                    )}
+
+                                </div>
+
+                            </div>
+
+                        </div>
+
+                    </aside>
+
+
+
+                    {/* --- MAIN CONTENT --- */}
+
+                    <main className="flex-1 flex flex-col h-full overflow-hidden bg-slate-50 dark:bg-slate-900 relative">
+
+                        {!isSidebarOpen && (
+
+                            <button 
+
+                                onClick={() => setIsSidebarOpen(true)}
+
+                                className="md:hidden absolute top-4 left-4 z-20 p-2.5 bg-white dark:bg-slate-800 rounded-full shadow-lg border border-gray-200 dark:border-slate-700 text-indigo-600 dark:text-indigo-400"
+
+                            >
+
+                                <Icons.Menu className="w-6 h-6" />
+
+                            </button>
+
+                        )}
+
+
+
+                        {activeNoteData ? (
+
+                            <div className={`flex flex-col h-full w-full transition-all ${isFullscreen ? 'fixed inset-0 z-[60] bg-gray-100 dark:bg-slate-900' : ''}`}>
+
+                                <div className="h-16 bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700 flex items-center justify-between px-4 md:px-6 shadow-sm z-10 flex-shrink-0">
+
+                                    <div className="flex items-center space-x-4 pl-12 md:pl-0 overflow-hidden">
+
+                                        <div className="hidden md:flex flex-col">
+
+                                            <span className="text-[10px] uppercase font-bold text-gray-400 dark:text-slate-500 tracking-wider">Documento</span>
+
+                                            <h2 className="text-sm md:text-base font-bold text-slate-800 dark:text-slate-100 truncate max-w-md">
+
+                                                {activeNoteData.title}
+
+                                            </h2>
+
+                                        </div>
+
+                                        <h2 className="md:hidden text-sm font-bold text-slate-800 dark:text-slate-100 truncate">
+
+                                            {activeNoteData.title}
+
+                                        </h2>
+
+                                    </div>
+
+                                    
+
+                                    <div className="flex items-center space-x-2">
+
+                                        <button 
+
+                                            onClick={() => setIsFullscreen(!isFullscreen)}
+
+                                            className="hidden md:flex items-center space-x-1 px-3 py-1.5 rounded-lg text-xs font-medium text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors"
+
+                                        >
+
+                                            {isFullscreen ? <Icons.Minimize className="w-4 h-4" /> : <Icons.Maximize className="w-4 h-4" />}
+
+                                            <span>{isFullscreen ? 'Salir' : 'Expandir'}</span>
+
+                                        </button>
+
+                                        <a 
+
+                                            href={activeNoteData.pdfUrl} 
+
+                                            target="_blank" 
+
+                                            className="flex items-center space-x-1 px-3 py-1.5 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 text-xs font-bold transition-colors shadow-sm"
+
+                                        >
+
+                                            <span>Abrir</span>
+
+                                            <Icons.ExternalLink className="w-3 h-3" />
+
+                                        </a>
+
+                                    </div>
+
+                                </div>
+
+
+
+                                <div className="flex-1 bg-gray-200 dark:bg-slate-950 iframe-container relative overflow-hidden">
+
+                                    <iframe 
+
+                                        src={activeNoteData.pdfUrl} 
+
+                                        className="w-full h-full border-none shadow-inner"
+
+                                        title="Visor PDF"
+
+                                    />
+
+                                    <div className="absolute inset-0 -z-10 flex items-center justify-center text-gray-400">
+
+                                        <div className="text-center">
+
+                                            <div className="animate-spin h-8 w-8 border-4 border-indigo-500 border-t-transparent rounded-full mx-auto mb-4"></div>
+
+                                            <p className="text-sm">Cargando PDF...</p>
+
+                                        </div>
+
+                                    </div>
+
+                                </div>
+
+                            </div>
+
+                        ) : (
+
+                            <div className="flex-1 flex flex-col items-center justify-center p-8 text-center fade-in overflow-y-auto">
+
+                                <div className="max-w-md">
+
+                                    <div className="w-24 h-24 bg-white dark:bg-slate-800 rounded-3xl flex items-center justify-center mb-8 shadow-xl border border-gray-100 dark:border-slate-700 mx-auto transform hover:rotate-6 transition-all">
+
+                                        <Icons.Rocket className="w-12 h-12 text-indigo-500" />
+
+                                    </div>
+
+                                    <h1 className="text-3xl font-extrabold text-slate-800 dark:text-white mb-4">
+
+                                        Gestor de Apuntes 2.0
+
+                                    </h1>
+
+                                    <p className="text-slate-500 dark:text-slate-400 mb-8">
+
+                                        Selecciona un documento para visualizarlo. Tus semestres y favoritos se guardan automáticamente.
+
+                                    </p>
+
+                                    <div className="grid grid-cols-2 gap-4">
+
+                                        <div className="p-4 bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700">
+
+                                            <div className="text-xl font-black text-indigo-600 dark:text-indigo-400">{MIS_DOCUMENTOS.length}</div>
+
+                                            <div className="text-[10px] text-gray-400 uppercase font-bold">Documentos</div>
+
+                                        </div>
+
+                                        <div className="p-4 bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700">
+
+                                            <div className="text-xl font-black text-emerald-500">{favorites.length}</div>
+
+                                            <div className="text-[10px] text-gray-400 uppercase font-bold">Favoritos</div>
+
+                                        </div>
+
+                                    </div>
+
+                                </div>
+
+                            </div>
+
+                        )}
+
+                    </main>
+
+                </div>
+
+            );
+
+        }
+
+
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+
+        root.render(<App />);
+
+    </script>
+
+</body>
+
+</html>
