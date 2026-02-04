@@ -34,6 +34,52 @@
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
         }
 
+        /* Estilos para la navegación */
+        .navigation {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .nav-btn {
+            text-decoration: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .nav-btn-primary {
+            background: #667eea;
+            color: white;
+            border: 2px solid #667eea;
+        }
+
+        .nav-btn-primary:hover {
+            background: #5a67d8;
+            border-color: #5a67d8;
+            transform: translateY(-2px);
+        }
+
+        .nav-btn-secondary {
+            background: white;
+            color: #4a5568;
+            border: 2px solid #e2e8f0;
+        }
+
+        .nav-btn-secondary:hover {
+            border-color: #667eea;
+            color: #667eea;
+            background: #f7fafc;
+            transform: translateY(-2px);
+        }
+
         .header h1 {
             color: #2d3748;
             font-size: 28px;
@@ -537,6 +583,14 @@
             return (
                 <div>
                     <div className="header">
+                        <nav className="navigation">
+                            <a href="index.html" className="nav-btn nav-btn-primary">
+                                🏠 Inicio
+                            </a>
+                            <a href="recursos.html" className="nav-btn nav-btn-secondary">
+                                📚 Recursos
+                            </a>
+                        </nav>
                         <h1>Plan de Estudios - Ingeniería en Computación</h1>
                         <p>Haz clic en las materias para seleccionarlas (puedes seleccionar múltiples). Explora sus dependencias y requisitos de manera interactiva.</p>
                     </div>
