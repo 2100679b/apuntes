@@ -2,8 +2,8 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Plan de Estudios Interactivo - Ingeniería en Computación</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Plan de Estudios - Ing. Computación</title>
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -12,13 +12,40 @@
             margin: 0;
             padding: 0;
             box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        :root {
+            --bg-primary: #667eea;
+            --bg-secondary: #764ba2;
+            --bg-surface: #ffffff;
+            --bg-card: #f8fafc;
+            --text-primary: #2d3748;
+            --text-secondary: #718096;
+            --border: #e2e8f0;
+            --accent: #667eea;
+            --shadow: rgba(0,0,0,0.1);
+        }
+
+        [data-theme="dark"] {
+            --bg-primary: #4c51bf;
+            --bg-secondary: #553c9a;
+            --bg-surface: #1a202c;
+            --bg-card: #2d3748;
+            --text-primary: #f7fafc;
+            --text-secondary: #cbd5e0;
+            --border: #4a5568;
+            --accent: #667eea;
+            --shadow: rgba(0,0,0,0.3);
         }
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
             min-height: 100vh;
-            padding: 20px;
+            padding: 10px;
+            color: var(--text-primary);
+            transition: background 0.3s ease;
         }
 
         #root {
@@ -27,179 +54,164 @@
         }
 
         .header {
-            background: white;
+            background: var(--bg-surface);
             border-radius: 12px;
-            padding: 24px;
-            margin-bottom: 20px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-        }
-
-        /* Estilos para la navegación */
-        .navigation {
+            padding: 16px;
+            margin-bottom: 12px;
+            box-shadow: 0 2px 8px var(--shadow);
             display: flex;
-            gap: 12px;
-            margin-bottom: 20px;
-            padding-bottom: 20px;
-            border-bottom: 1px solid #e2e8f0;
-        }
-
-        .nav-btn {
-            text-decoration: none;
-            padding: 10px 20px;
-            border-radius: 8px;
-            font-weight: 600;
-            font-size: 14px;
-            transition: all 0.2s;
-            display: inline-flex;
+            justify-content: space-between;
             align-items: center;
-            gap: 8px;
-        }
-
-        .nav-btn-primary {
-            background: #667eea;
-            color: white;
-            border: 2px solid #667eea;
-        }
-
-        .nav-btn-primary:hover {
-            background: #5a67d8;
-            border-color: #5a67d8;
-            transform: translateY(-2px);
-        }
-
-        .nav-btn-secondary {
-            background: white;
-            color: #4a5568;
-            border: 2px solid #e2e8f0;
-        }
-
-        .nav-btn-secondary:hover {
-            border-color: #667eea;
-            color: #667eea;
-            background: #f7fafc;
-            transform: translateY(-2px);
         }
 
         .header h1 {
-            color: #2d3748;
-            font-size: 28px;
-            margin-bottom: 8px;
+            font-size: 18px;
+            line-height: 1.3;
         }
 
-        .header p {
-            color: #718096;
-            font-size: 14px;
+        .theme-toggle {
+            background: var(--bg-card);
+            border: 2px solid var(--border);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 20px;
+            transition: transform 0.2s;
+        }
+
+        .theme-toggle:active {
+            transform: scale(0.9);
         }
 
         .controls {
-            background: white;
+            background: var(--bg-surface);
             border-radius: 12px;
-            padding: 20px;
-            margin-bottom: 20px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            padding: 12px;
+            margin-bottom: 12px;
+            box-shadow: 0 2px 8px var(--shadow);
         }
 
         .filters {
             display: flex;
-            gap: 12px;
+            gap: 6px;
             flex-wrap: wrap;
-            margin-bottom: 16px;
+            margin-bottom: 12px;
         }
 
         .filter-btn {
-            padding: 8px 16px;
-            border: 2px solid #e2e8f0;
-            border-radius: 8px;
-            background: white;
+            padding: 8px 12px;
+            border: 2px solid var(--border);
+            border-radius: 20px;
+            background: var(--bg-surface);
+            color: var(--text-primary);
             cursor: pointer;
-            font-size: 13px;
-            font-weight: 500;
+            font-size: 12px;
+            font-weight: 600;
             transition: all 0.2s;
-        }
-
-        .filter-btn:hover {
-            border-color: #667eea;
-            background: #f7fafc;
+            flex: 1;
+            min-width: 70px;
+            text-align: center;
         }
 
         .filter-btn.active {
-            background: #667eea;
+            background: var(--accent);
             color: white;
-            border-color: #667eea;
+            border-color: var(--accent);
         }
 
         .search-box {
             width: 100%;
             padding: 12px;
-            border: 2px solid #e2e8f0;
+            border: 2px solid var(--border);
             border-radius: 8px;
-            font-size: 14px;
+            font-size: 16px;
+            background: var(--bg-surface);
+            color: var(--text-primary);
             transition: border-color 0.2s;
         }
 
         .search-box:focus {
             outline: none;
-            border-color: #667eea;
+            border-color: var(--accent);
         }
 
         .plan-container {
-            background: white;
+            background: var(--bg-surface);
             border-radius: 12px;
-            padding: 24px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            overflow-x: auto;
+            padding: 12px;
+            box-shadow: 0 2px 8px var(--shadow);
         }
 
         .semesters {
             display: flex;
-            gap: 16px;
-            min-width: max-content;
-        }
-
-        .semester {
-            flex-shrink: 0;
-            width: 280px;
+            flex-direction: column;
+            gap: 10px;
         }
 
         .semester-header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
             color: white;
             padding: 12px;
-            border-radius: 8px 8px 0 0;
+            border-radius: 8px;
             font-weight: 600;
-            text-align: center;
-            font-size: 16px;
+            font-size: 14px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .semester-header .toggle-icon {
+            font-size: 18px;
+            font-weight: bold;
         }
 
         .semester-content {
-            background: #f7fafc;
-            border: 2px solid #e2e8f0;
+            display: none;
+            background: var(--bg-card);
+            border: 2px solid var(--border);
             border-top: none;
             border-radius: 0 0 8px 8px;
-            padding: 12px;
-            min-height: 200px;
+            padding: 8px;
+            margin-top: -8px;
+        }
+
+        .semester-content.open {
+            display: block;
+            animation: slideDown 0.3s ease;
+        }
+
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
         .subject-card {
-            background: white;
-            border: 2px solid #e2e8f0;
+            background: var(--bg-surface);
+            border: 2px solid var(--border);
             border-radius: 8px;
-            padding: 12px;
-            margin-bottom: 12px;
+            padding: 10px;
+            margin-bottom: 8px;
             cursor: pointer;
             transition: all 0.2s;
-            position: relative;
         }
 
-        .subject-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        .subject-card:active {
+            transform: scale(0.98);
         }
 
         .subject-card.selected {
             border-color: #667eea;
-            border-width: 3px;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+            background: #f0f4ff;
+        }
+
+        [data-theme="dark"] .subject-card.selected {
+            background: #2d3748;
         }
 
         .subject-card.prerequisite {
@@ -207,9 +219,17 @@
             background: #f0fff4;
         }
 
+        [data-theme="dark"] .subject-card.prerequisite {
+            background: #2f4f3f;
+        }
+
         .subject-card.dependent {
             border-color: #ed8936;
             background: #fffaf0;
+        }
+
+        [data-theme="dark"] .subject-card.dependent {
+            background: #4a3520;
         }
 
         .subject-card.hidden {
@@ -217,40 +237,25 @@
             pointer-events: none;
         }
 
+        .subject-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 6px;
+        }
+
         .subject-code {
             font-weight: 700;
-            color: #2d3748;
-            font-size: 13px;
-            margin-bottom: 4px;
-        }
-
-        .subject-name {
-            color: #4a5568;
-            font-size: 12px;
-            margin-bottom: 8px;
-            line-height: 1.4;
-        }
-
-        .subject-credits {
-            display: flex;
-            gap: 8px;
             font-size: 11px;
-            color: #718096;
-        }
-
-        .credit-badge {
-            background: #edf2f7;
-            padding: 2px 6px;
+            background: var(--bg-card);
+            padding: 3px 6px;
             border-radius: 4px;
-            font-weight: 500;
+            color: var(--text-primary);
         }
 
         .subject-type {
-            position: absolute;
-            top: 8px;
-            right: 8px;
-            width: 12px;
-            height: 12px;
+            width: 8px;
+            height: 8px;
             border-radius: 50%;
         }
 
@@ -260,71 +265,80 @@
         .type-oc { background: #a52a2a; }
         .type-ia { background: #ffa500; }
 
-        .info-panel {
-            background: white;
-            border-radius: 12px;
-            padding: 24px;
-            margin-top: 20px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        .subject-name {
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 6px;
+            line-height: 1.3;
         }
 
-        .info-panel h2 {
-            color: #2d3748;
-            font-size: 20px;
-            margin-bottom: 16px;
+        .subject-credits {
+            display: flex;
+            gap: 4px;
+            font-size: 10px;
+            color: var(--text-secondary);
+        }
+
+        .credit-badge {
+            background: var(--bg-card);
+            padding: 2px 5px;
+            border-radius: 3px;
+        }
+
+        .info-panel {
+            background: var(--bg-surface);
+            border-radius: 12px;
+            padding: 16px;
+            margin-top: 12px;
+            box-shadow: 0 2px 8px var(--shadow);
         }
 
         .info-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 16px;
-            margin-bottom: 20px;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 16px;
         }
 
         .info-item {
-            background: #f7fafc;
-            padding: 16px;
+            background: var(--bg-card);
+            padding: 12px;
             border-radius: 8px;
-            border-left: 4px solid #667eea;
+            border-left: 4px solid var(--accent);
         }
 
         .info-label {
-            font-size: 12px;
-            color: #718096;
-            margin-bottom: 4px;
+            font-size: 10px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
         }
 
         .info-value {
-            font-size: 24px;
+            font-size: 20px;
             font-weight: 700;
-            color: #2d3748;
+            margin-top: 4px;
         }
 
-        .legend {
+        .selection-header {
             display: flex;
-            gap: 16px;
-            flex-wrap: wrap;
-            margin-top: 16px;
-            padding-top: 16px;
-            border-top: 1px solid #e2e8f0;
-        }
-
-        .legend-item {
-            display: flex;
+            justify-content: space-between;
             align-items: center;
-            gap: 8px;
-            font-size: 13px;
-            color: #4a5568;
+            margin-bottom: 12px;
         }
 
-        .legend-color {
-            width: 20px;
-            height: 20px;
-            border-radius: 4px;
+        .clear-btn {
+            padding: 6px 12px;
+            background: #e53e3e;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: bold;
+            cursor: pointer;
         }
 
-        .dependencies {
-            margin-top: 16px;
+        .clear-btn:active {
+            opacity: 0.8;
         }
 
         .dep-section {
@@ -332,40 +346,94 @@
         }
 
         .dep-title {
+            font-size: 12px;
             font-weight: 600;
-            color: #2d3748;
-            font-size: 14px;
-            margin-bottom: 8px;
-        }
-
-        .dep-list {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
+            margin-bottom: 6px;
         }
 
         .dep-tag {
-            background: #edf2f7;
-            padding: 6px 12px;
+            display: inline-block;
+            background: var(--bg-card);
+            padding: 6px 10px;
             border-radius: 6px;
-            font-size: 12px;
-            color: #4a5568;
+            font-size: 11px;
+            margin: 0 4px 4px 0;
             cursor: pointer;
-            transition: all 0.2s;
+            border: 1px solid var(--border);
         }
 
-        .dep-tag:hover {
-            background: #667eea;
-            color: white;
+        .dep-tag:active {
+            opacity: 0.7;
         }
 
-        @media (max-width: 768px) {
+        .legend {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid var(--border);
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 11px;
+            background: var(--bg-card);
+            padding: 4px 8px;
+            border-radius: 12px;
+        }
+
+        .legend-color {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+        }
+
+        /* Desktop */
+        @media (min-width: 769px) {
+            body { padding: 16px; }
+            
+            .header {
+                padding: 20px;
+            }
+
+            .header h1 {
+                font-size: 24px;
+            }
+
             .semesters {
-                flex-direction: column;
+                flex-direction: row;
+                overflow-x: auto;
+                gap: 16px;
             }
 
             .semester {
-                width: 100%;
+                flex-shrink: 0;
+                width: 280px;
+            }
+
+            .semester-header {
+                cursor: default;
+            }
+
+            .semester-header .toggle-icon {
+                display: none;
+            }
+
+            .semester-content {
+                display: block !important;
+                animation: none;
+            }
+
+            .subject-card:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 4px 12px var(--shadow);
+            }
+
+            .info-grid {
+                grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
             }
         }
     </style>
@@ -374,18 +442,17 @@
     <div id="root"></div>
 
     <script type="text/babel">
-        const { useState, useMemo } = React;
+        const { useState, useEffect, useMemo } = React;
 
-        // Datos del plan de estudios
         const subjects = [
             // Semestre I
-            { code: "CB0100-L", name: "Laboratorio de Física I", semester: 1, theory: 0, lab: 1, credits: 2, type: "CB", prereqs: [] },
-            { code: "CB0500-L", name: "Laboratorio de Química", semester: 1, theory: 0, lab: 1, credits: 2, type: "CB", prereqs: [] },
+            { code: "CB0100-L", name: "Lab. Física I", semester: 1, theory: 0, lab: 1, credits: 2, type: "CB", prereqs: [] },
+            { code: "CB0500-L", name: "Lab. Química", semester: 1, theory: 0, lab: 1, credits: 2, type: "CB", prereqs: [] },
             { code: "CB0200-T", name: "Álgebra Superior", semester: 1, theory: 4, lab: 0, credits: 8, type: "CB", prereqs: [] },
             { code: "CB0000-T", name: "Cálculo I", semester: 1, theory: 5, lab: 0, credits: 10, type: "CB", prereqs: [] },
             { code: "CB0100-T", name: "Física I", semester: 1, theory: 4, lab: 0, credits: 8, type: "CB", prereqs: [] },
             { code: "CS0000-T", name: "Inglés I", semester: 1, theory: 3, lab: 0, credits: 6, type: "CS", prereqs: [] },
-            { code: "OC0000-L", name: "Laboratorio de Herramientas Computacionales", semester: 1, theory: 0, lab: 2, credits: 4, type: "OC", prereqs: [] },
+            { code: "OC0000-L", name: "Lab. Herramientas Comp.", semester: 1, theory: 0, lab: 2, credits: 4, type: "OC", prereqs: [] },
             { code: "CB0500-T", name: "Química", semester: 1, theory: 3, lab: 0, credits: 6, type: "CB", prereqs: [] },
             { code: "OC0100-T", name: "Técnicas de Estudio", semester: 1, theory: 2, lab: 0, credits: 4, type: "OC", prereqs: [] },
             
@@ -394,19 +461,19 @@
             { code: "CI0100-T", name: "Electrónica Analógica I", semester: 2, theory: 3, lab: 0, credits: 6, type: "CI", prereqs: ["CB0200-T"] },
             { code: "CB0101-T", name: "Física II", semester: 2, theory: 4, lab: 0, credits: 8, type: "CB", prereqs: ["CB0100-T"] },
             { code: "CS0001-T", name: "Inglés II", semester: 2, theory: 3, lab: 0, credits: 6, type: "CS", prereqs: ["CS0000-T"] },
-            { code: "CI0100-L", name: "Laboratorio de Electrónica Analógica I", semester: 2, theory: 0, lab: 2, credits: 4, type: "CI", prereqs: [] },
-            { code: "CB0101-L", name: "Laboratorio de Física II", semester: 2, theory: 0, lab: 1, credits: 2, type: "CB", prereqs: [] },
-            { code: "CI0000-L", name: "Laboratorio de Programación de Computadoras", semester: 2, theory: 0, lab: 2, credits: 4, type: "CI", prereqs: [] },
+            { code: "CI0100-L", name: "Lab. Electrónica Analógica I", semester: 2, theory: 0, lab: 2, credits: 4, type: "CI", prereqs: [] },
+            { code: "CB0101-L", name: "Lab. Física II", semester: 2, theory: 0, lab: 1, credits: 2, type: "CB", prereqs: [] },
+            { code: "CI0000-L", name: "Lab. Prog. Computadoras", semester: 2, theory: 0, lab: 2, credits: 4, type: "CI", prereqs: [] },
             { code: "IA7000-T", name: "Lógica", semester: 2, theory: 3, lab: 0, credits: 6, type: "IA", prereqs: [] },
-            { code: "CI0000-T", name: "Programación de Computadoras", semester: 2, theory: 3, lab: 0, credits: 6, type: "CI", prereqs: ["OC0000-L"] },
+            { code: "CI0000-T", name: "Prog. de Computadoras", semester: 2, theory: 3, lab: 0, credits: 6, type: "CI", prereqs: ["OC0000-L"] },
             
             // Semestre III
             { code: "CB0002-T", name: "Cálculo III", semester: 3, theory: 5, lab: 0, credits: 10, type: "CB", prereqs: ["CB0001-T"] },
             { code: "CI0101-T", name: "Electrónica Analógica II", semester: 3, theory: 3, lab: 0, credits: 6, type: "CI", prereqs: ["CI0100-T"] },
             { code: "CS0002-T", name: "Inglés III", semester: 3, theory: 3, lab: 0, credits: 6, type: "CS", prereqs: ["CS0001-T"] },
-            { code: "CI0101-L", name: "Laboratorio de Electrónica Analógica II", semester: 3, theory: 0, lab: 2, credits: 4, type: "CI", prereqs: [] },
-            { code: "CB0102-L", name: "Laboratorio de Teoría Electromagnética I", semester: 3, theory: 0, lab: 2, credits: 4, type: "CB", prereqs: [] },
-            { code: "CB0501-L", name: "Laboratorio de Termodinámica", semester: 3, theory: 0, lab: 1, credits: 2, type: "CB", prereqs: [] },
+            { code: "CI0101-L", name: "Lab. Electrónica Analógica II", semester: 3, theory: 0, lab: 2, credits: 4, type: "CI", prereqs: [] },
+            { code: "CB0102-L", name: "Lab. Teoría Electromag. I", semester: 3, theory: 0, lab: 2, credits: 4, type: "CB", prereqs: [] },
+            { code: "CB0501-L", name: "Lab. Termodinámica", semester: 3, theory: 0, lab: 1, credits: 2, type: "CB", prereqs: [] },
             { code: "CB0300-T", name: "Métodos Numéricos", semester: 3, theory: 4, lab: 0, credits: 8, type: "CB", prereqs: ["CB0200-T", "CB0000-T"] },
             { code: "CB0501-T", name: "Termodinámica", semester: 3, theory: 4, lab: 0, credits: 8, type: "CB", prereqs: ["CB0000-T"] },
             { code: "CB0102-T", name: "Teoría Electromagnética I", semester: 3, theory: 4, lab: 0, credits: 8, type: "CB", prereqs: ["CB0101-T"] },
@@ -416,7 +483,7 @@
             { code: "CI0200-T", name: "Circuitos Eléctricos I", semester: 4, theory: 4, lab: 0, credits: 8, type: "CI", prereqs: ["CB0200-T"] },
             { code: "CI0300-T", name: "Electrónica Digital I", semester: 4, theory: 4, lab: 0, credits: 8, type: "CI", prereqs: ["CI0100-T"] },
             { code: "CS0003-T", name: "Inglés IV", semester: 4, theory: 3, lab: 0, credits: 6, type: "CS", prereqs: ["CS0002-T"] },
-            { code: "CI0300-L", name: "Laboratorio de Electrónica Digital I", semester: 4, theory: 0, lab: 2, credits: 4, type: "CI", prereqs: [] },
+            { code: "CI0300-L", name: "Lab. Electrónica Digital I", semester: 4, theory: 0, lab: 2, credits: 4, type: "CI", prereqs: [] },
             { code: "CI7100-T", name: "Estructuras de Datos", semester: 4, theory: 3, lab: 0, credits: 6, type: "CI", prereqs: ["CI0000-T"] },
             { code: "CI7101-T", name: "Ingeniería de Programación", semester: 4, theory: 4, lab: 0, credits: 8, type: "CI", prereqs: ["CI0000-T"] },
             
@@ -424,107 +491,111 @@
             { code: "CB7000-T", name: "Álgebra Lineal", semester: 5, theory: 4, lab: 0, credits: 8, type: "CB", prereqs: ["CB0200-T", "CB0000-T"] },
             { code: "CB0600-T", name: "Probabilidad y Estadística", semester: 5, theory: 4, lab: 0, credits: 8, type: "CB", prereqs: ["CB0200-T", "CB0001-T"] },
             { code: "CI0400-T", name: "Control Analógico I", semester: 5, theory: 3, lab: 0, credits: 6, type: "CI", prereqs: ["CB0003-T"] },
-            { code: "CI0400-L", name: "Laboratorio de Control Analógico I", semester: 5, theory: 0, lab: 2, credits: 4, type: "CI", prereqs: [] },
+            { code: "CI0400-L", name: "Lab. Control Analógico I", semester: 5, theory: 0, lab: 2, credits: 4, type: "CI", prereqs: [] },
             { code: "IA7300-T", name: "Paradigmas de Programación", semester: 5, theory: 3, lab: 0, credits: 6, type: "IA", prereqs: ["CI7101-T"] },
-            { code: "IA7300-L", name: "Laboratorio de Paradigmas de Programación", semester: 5, theory: 0, lab: 3, credits: 6, type: "IA", prereqs: [] },
+            { code: "IA7300-L", name: "Lab. Paradigmas de Prog.", semester: 5, theory: 0, lab: 3, credits: 6, type: "IA", prereqs: [] },
             { code: "CI7000-T", name: "Matemáticas Discretas", semester: 5, theory: 4, lab: 0, credits: 8, type: "CI", prereqs: ["IA7000-T"] },
             { code: "CI7102-T", name: "Análisis de Algoritmos", semester: 5, theory: 4, lab: 0, credits: 8, type: "CI", prereqs: ["CI7100-T"] },
             
             // Semestre VI
             { code: "IA3100-T", name: "Comunicaciones I", semester: 6, theory: 4, lab: 0, credits: 8, type: "IA", prereqs: ["CB0003-T", "CB0102-T"] },
-            { code: "IA3100-L", name: "Laboratorio de Comunicaciones I", semester: 6, theory: 0, lab: 1, credits: 2, type: "IA", prereqs: [] },
+            { code: "IA3100-L", name: "Lab. Comunicaciones I", semester: 6, theory: 0, lab: 1, credits: 2, type: "IA", prereqs: [] },
             { code: "CI0401-T", name: "Control Analógico II", semester: 6, theory: 3, lab: 0, credits: 6, type: "CI", prereqs: ["CI0400-T"] },
-            { code: "CI0401-L", name: "Laboratorio de Control Analógico II", semester: 6, theory: 0, lab: 2, credits: 4, type: "CI", prereqs: [] },
+            { code: "CI0401-L", name: "Lab. Control Analógico II", semester: 6, theory: 0, lab: 2, credits: 4, type: "CI", prereqs: [] },
             { code: "IA7200-T", name: "Graficación", semester: 6, theory: 3, lab: 0, credits: 6, type: "IA", prereqs: ["CI0000-T"] },
-            { code: "IA7200-L", name: "Laboratorio de Graficación", semester: 6, theory: 0, lab: 3, credits: 6, type: "IA", prereqs: [] },
+            { code: "IA7200-L", name: "Lab. Graficación", semester: 6, theory: 0, lab: 3, credits: 6, type: "IA", prereqs: [] },
             { code: "OC0300-T", name: "Economía", semester: 6, theory: 3, lab: 0, credits: 6, type: "OC", prereqs: [] },
             { code: "CI7001-T", name: "Lenguajes Formales y Autómatas", semester: 6, theory: 3, lab: 0, credits: 6, type: "CI", prereqs: ["CI7000-T"] },
             { code: "IA7400-T", name: "Organización de Computadoras", semester: 6, theory: 3, lab: 0, credits: 6, type: "IA", prereqs: ["CI0300-T"] },
             
             // Semestre VII
             { code: "IA7500-T", name: "Bases de Datos", semester: 7, theory: 4, lab: 0, credits: 8, type: "IA", prereqs: ["CI7101-T", "IA7000-T"] },
-            { code: "IA7500-L", name: "Laboratorio de Bases de Datos", semester: 7, theory: 0, lab: 2, credits: 4, type: "IA", prereqs: [] },
+            { code: "IA7500-L", name: "Lab. Bases de Datos", semester: 7, theory: 0, lab: 2, credits: 4, type: "IA", prereqs: [] },
             { code: "IA7100-T", name: "Compiladores", semester: 7, theory: 3, lab: 0, credits: 6, type: "IA", prereqs: ["CI7001-T"] },
-            { code: "IA7800-T", name: "Investigación de Operaciones", semester: 7, theory: 3, lab: 0, credits: 6, type: "IA", prereqs: ["CB0001-T", "CB7000-T"] },
+            { code: "IA7800-T", name: "Inv. de Operaciones", semester: 7, theory: 3, lab: 0, credits: 6, type: "IA", prereqs: ["CB0001-T", "CB7000-T"] },
             { code: "IA7600-T", name: "Redes de Computadoras", semester: 7, theory: 4, lab: 0, credits: 8, type: "IA", prereqs: ["CI0000-T", "CI0300-T"] },
-            { code: "IA7600-L", name: "Laboratorio de Redes de Computadoras", semester: 7, theory: 0, lab: 3, credits: 6, type: "IA", prereqs: [] },
+            { code: "IA7600-L", name: "Lab. Redes de Computadoras", semester: 7, theory: 0, lab: 3, credits: 6, type: "IA", prereqs: [] },
             { code: "CI7002-T", name: "Teoría de la Computación", semester: 7, theory: 4, lab: 0, credits: 8, type: "CI", prereqs: ["CI7001-T"] },
             
             // Semestre VIII
             { code: "OC0400-T", name: "Administración", semester: 8, theory: 3, lab: 0, credits: 6, type: "OC", prereqs: [] },
             { code: "CS0200-T", name: "Ética Profesional", semester: 8, theory: 3, lab: 0, credits: 6, type: "CS", prereqs: [] },
             { code: "IA3400-T", name: "Control Digital I", semester: 8, theory: 3, lab: 0, credits: 6, type: "IA", prereqs: ["CI0401-T"] },
-            { code: "IA3400-L", name: "Laboratorio de Control Digital I", semester: 8, theory: 0, lab: 1, credits: 2, type: "IA", prereqs: [] },
+            { code: "IA3400-L", name: "Lab. Control Digital I", semester: 8, theory: 0, lab: 1, credits: 2, type: "IA", prereqs: [] },
             { code: "CI7300-T", name: "Modelos Probabilistas", semester: 8, theory: 3, lab: 0, credits: 6, type: "CI", prereqs: ["CB0600-T"] },
             { code: "CI7200-T", name: "Sistemas Operativos", semester: 8, theory: 4, lab: 0, credits: 8, type: "CI", prereqs: ["CI0000-T"] },
-            { code: "CI7200-L", name: "Laboratorio de Sistemas Operativos", semester: 8, theory: 0, lab: 5, credits: 10, type: "CI", prereqs: [] },
+            { code: "CI7200-L", name: "Lab. Sistemas Operativos", semester: 8, theory: 0, lab: 5, credits: 10, type: "CI", prereqs: [] },
             
             // Semestre IX
             { code: "OC0200-T", name: "Contabilidad", semester: 9, theory: 3, lab: 0, credits: 6, type: "OC", prereqs: [] },
             { code: "CS0100-T", name: "Expresión Oral y Escrita", semester: 9, theory: 4, lab: 0, credits: 8, type: "CS", prereqs: [] },
             { code: "IA7700-T", name: "Inteligencia Artificial", semester: 9, theory: 3, lab: 0, credits: 6, type: "IA", prereqs: ["CI7000-T", "IA7300-T"] },
-            { code: "IA7700-L", name: "Laboratorio de Inteligencia Artificial", semester: 9, theory: 0, lab: 3, credits: 6, type: "IA", prereqs: [] },
+            { code: "IA7700-L", name: "Lab. Inteligencia Artificial", semester: 9, theory: 0, lab: 3, credits: 6, type: "IA", prereqs: [] },
             
             // Semestre X
             { code: "OC0500-T", name: "Seminario de Tesis", semester: 10, theory: 4, lab: 0, credits: 8, type: "OC", prereqs: [] },
         ];
 
-        // Mapeo de dependencias
-        const dependencyMap = {};
-        subjects.forEach(subject => {
-            dependencyMap[subject.code] = subject.prereqs;
-        });
+        const typeColors = {
+            CB: { name: "Básicas", color: "#ff0000" },
+            CI: { name: "Ingeniería", color: "#00ff00" },
+            CS: { name: "Sociales", color: "#0000ff" },
+            OC: { name: "Otras", color: "#a52a2a" },
+            IA: { name: "Aplicada", color: "#ffa500" }
+        };
 
-        // Función para encontrar materias dependientes
-        function getDependents(code) {
-            return subjects
-                .filter(s => s.prereqs.includes(code))
-                .map(s => s.code);
-        }
-
-        // Función recursiva para obtener todos los prerrequisitos
         function getAllPrerequisites(code, visited = new Set()) {
             if (visited.has(code)) return [];
             visited.add(code);
-            
             const subject = subjects.find(s => s.code === code);
             if (!subject) return [];
-            
             let allPrereqs = [...subject.prereqs];
             subject.prereqs.forEach(prereq => {
                 allPrereqs = [...allPrereqs, ...getAllPrerequisites(prereq, visited)];
             });
-            
             return [...new Set(allPrereqs)];
         }
 
-        // Función recursiva para obtener todos los dependientes
         function getAllDependents(code, visited = new Set()) {
             if (visited.has(code)) return [];
             visited.add(code);
-            
-            const directDeps = getDependents(code);
+            const directDeps = subjects.filter(s => s.prereqs.includes(code)).map(s => s.code);
             let allDeps = [...directDeps];
-            
             directDeps.forEach(dep => {
                 allDeps = [...allDeps, ...getAllDependents(dep, visited)];
             });
-            
             return [...new Set(allDeps)];
         }
 
-        const typeColors = {
-            CB: { name: "Ciencias Básicas", color: "#ff0000" },
-            CI: { name: "Ciencias de la Ingeniería", color: "#00ff00" },
-            CS: { name: "Ciencias Sociales", color: "#0000ff" },
-            OC: { name: "Otras Complementarias", color: "#a52a2a" },
-            IA: { name: "Ingeniería Aplicada", color: "#ffa500" }
-        };
-
         function App() {
+            const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'light');
             const [selectedSubjects, setSelectedSubjects] = useState([]);
             const [filterType, setFilterType] = useState("all");
             const [searchTerm, setSearchTerm] = useState("");
+            const [openSemesters, setOpenSemesters] = useState({});
+
+            useEffect(() => {
+                document.documentElement.setAttribute('data-theme', theme);
+                localStorage.setItem('theme', theme);
+            }, [theme]);
+
+            useEffect(() => {
+                const isMobile = window.innerWidth <= 768;
+                const initialOpen = {};
+                for (let i = 1; i <= 10; i++) {
+                    initialOpen[i] = !isMobile;
+                }
+                if (isMobile) initialOpen[1] = true;
+                setOpenSemesters(initialOpen);
+            }, []);
+
+            const toggleTheme = () => setTheme(prev => prev === 'light' ? 'dark' : 'light');
+
+            const toggleSemester = (sem) => {
+                if (window.innerWidth <= 768) {
+                    setOpenSemesters(prev => ({ ...prev, [sem]: !prev[sem] }));
+                }
+            };
 
             const filteredSubjects = useMemo(() => {
                 return subjects.filter(subject => {
@@ -539,19 +610,12 @@
             const handleSubjectClick = (subject) => {
                 setSelectedSubjects(prev => {
                     const isSelected = prev.some(s => s.code === subject.code);
-                    if (isSelected) {
-                        return prev.filter(s => s.code !== subject.code);
-                    } else {
-                        return [...prev, subject];
-                    }
+                    return isSelected 
+                        ? prev.filter(s => s.code !== subject.code)
+                        : [...prev, subject];
                 });
             };
 
-            const clearSelection = () => {
-                setSelectedSubjects([]);
-            };
-
-            // Combinar todos los prerrequisitos y dependientes de las materias seleccionadas
             const allPrerequisites = useMemo(() => {
                 const prereqs = new Set();
                 selectedSubjects.forEach(subject => {
@@ -568,31 +632,13 @@
                 return Array.from(deps);
             }, [selectedSubjects]);
 
-            const prerequisites = allPrerequisites;
-            const dependents = allDependents;
-
-            const totalCredits = subjects.reduce((sum, s) => sum + s.credits, 0);
-            const typeStats = Object.keys(typeColors).map(type => ({
-                type,
-                count: subjects.filter(s => s.type === type).length,
-                credits: subjects.filter(s => s.type === type).reduce((sum, s) => sum + s.credits, 0)
-            }));
-
-            const semesterGroups = Array.from({ length: 10 }, (_, i) => i + 1);
-
             return (
                 <div>
                     <div className="header">
-                        <nav className="navigation">
-                            <a href="index.html" className="nav-btn nav-btn-primary">
-                                🏠 Inicio
-                            </a>
-                            <a href="recursos.html" className="nav-btn nav-btn-secondary">
-                                📚 Recursos
-                            </a>
-                        </nav>
-                        <h1>Plan de Estudios - Ingeniería en Computación</h1>
-                        <p>Haz clic en las materias para seleccionarlas (puedes seleccionar múltiples). Explora sus dependencias y requisitos de manera interactiva.</p>
+                        <h1>Plan de Estudios<br/>Ing. Computación</h1>
+                        <div className="theme-toggle" onClick={toggleTheme}>
+                            {theme === 'light' ? '🌙' : '☀️'}
+                        </div>
                     </div>
 
                     <div className="controls">
@@ -616,7 +662,7 @@
                         <input 
                             type="text"
                             className="search-box"
-                            placeholder="Buscar materia por código o nombre..."
+                            placeholder="🔍 Buscar materia..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                         />
@@ -624,33 +670,48 @@
 
                     <div className="plan-container">
                         <div className="semesters">
-                            {semesterGroups.map(sem => {
+                            {Array.from({ length: 10 }, (_, i) => i + 1).map(sem => {
                                 const semesterSubjects = filteredSubjects.filter(s => s.semester === sem);
-                                
+                                const isOpen = openSemesters[sem];
+
                                 return (
                                     <div key={sem} className="semester">
-                                        <div className="semester-header">
-                                            Semestre {sem}
+                                        <div 
+                                            className={`semester-header ${isOpen ? 'open' : ''}`}
+                                            onClick={() => toggleSemester(sem)}
+                                        >
+                                            <span>Semestre {sem}</span>
+                                            <span className="toggle-icon">{isOpen ? '−' : '+'}</span>
                                         </div>
-                                        <div className="semester-content">
+                                        <div className={`semester-content ${isOpen ? 'open' : ''}`}>
+                                            {semesterSubjects.length === 0 && (
+                                                <div style={{textAlign: 'center', padding: '10px', opacity: 0.5, fontSize: '12px'}}>
+                                                    Sin materias
+                                                </div>
+                                            )}
                                             {semesterSubjects.map(subject => {
                                                 const isSelected = selectedSubjects.some(s => s.code === subject.code);
-                                                const isPrereq = prerequisites.includes(subject.code);
-                                                const isDependent = dependents.includes(subject.code);
+                                                const isPrereq = allPrerequisites.includes(subject.code);
+                                                const isDependent = allDependents.includes(subject.code);
+                                                const isRelevant = searchTerm === "" || 
+                                                    subject.code.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                                                    subject.name.toLowerCase().includes(searchTerm.toLowerCase());
 
                                                 return (
                                                     <div 
                                                         key={subject.code}
-                                                        className={`subject-card ${isSelected ? "selected" : ""} ${isPrereq ? "prerequisite" : ""} ${isDependent ? "dependent" : ""}`}
+                                                        className={`subject-card ${isSelected ? "selected" : ""} ${isPrereq ? "prerequisite" : ""} ${isDependent ? "dependent" : ""} ${!isRelevant ? "hidden" : ""}`}
                                                         onClick={() => handleSubjectClick(subject)}
                                                     >
-                                                        <div className={`subject-type type-${subject.type.toLowerCase()}`}></div>
-                                                        <div className="subject-code">{subject.code}</div>
+                                                        <div className="subject-top">
+                                                            <span className="subject-code">{subject.code}</span>
+                                                            <div className={`subject-type type-${subject.type.toLowerCase()}`}></div>
+                                                        </div>
                                                         <div className="subject-name">{subject.name}</div>
                                                         <div className="subject-credits">
-                                                            <span className="credit-badge">T: {subject.theory}</span>
-                                                            <span className="credit-badge">P: {subject.lab}</span>
-                                                            <span className="credit-badge">C: {subject.credits}</span>
+                                                            <span className="credit-badge">T:{subject.theory}</span>
+                                                            <span className="credit-badge">P:{subject.lab}</span>
+                                                            <span className="credit-badge">C:{subject.credits}</span>
                                                         </div>
                                                     </div>
                                                 );
@@ -663,151 +724,63 @@
                     </div>
 
                     <div className="info-panel">
-                        <h2>Información del Plan de Estudios</h2>
+                        <h2 style={{fontSize: "16px", marginBottom: "12px"}}>Información</h2>
                         <div className="info-grid">
                             <div className="info-item">
-                                <div className="info-label">Total de Materias</div>
+                                <div className="info-label">Materias</div>
                                 <div className="info-value">{subjects.length}</div>
                             </div>
                             <div className="info-item">
-                                <div className="info-label">Total de Créditos</div>
-                                <div className="info-value">{totalCredits}</div>
-                            </div>
-                            <div className="info-item">
-                                <div className="info-label">Semestres</div>
-                                <div className="info-value">10</div>
-                            </div>
-                            <div className="info-item">
-                                <div className="info-label">Promedio por Semestre</div>
-                                <div className="info-value">{Math.round(totalCredits / 10)}</div>
+                                <div className="info-label">Créditos</div>
+                                <div className="info-value">{subjects.reduce((sum, s) => sum + s.credits, 0)}</div>
                             </div>
                         </div>
 
                         {selectedSubjects.length > 0 && (
-                            <div className="dependencies">
-                                <div style={{display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px"}}>
-                                    <h2>Materias Seleccionadas ({selectedSubjects.length})</h2>
-                                    <button 
-                                        onClick={clearSelection}
-                                        style={{
-                                            padding: "8px 16px",
-                                            background: "#e53e3e",
-                                            color: "white",
-                                            border: "none",
-                                            borderRadius: "6px",
-                                            cursor: "pointer",
-                                            fontWeight: "500",
-                                            fontSize: "13px"
-                                        }}
-                                    >
-                                        Limpiar Selección
+                            <div>
+                                <div className="selection-header">
+                                    <h3 style={{fontSize: "14px"}}>Selección ({selectedSubjects.length})</h3>
+                                    <button className="clear-btn" onClick={() => setSelectedSubjects([])}>
+                                        Limpiar
                                     </button>
                                 </div>
-
-                                <div style={{marginBottom: "20px", padding: "12px", background: "#f7fafc", borderRadius: "8px"}}>
-                                    <div style={{display: "flex", flexWrap: "wrap", gap: "8px"}}>
-                                        {selectedSubjects.map(subject => (
-                                            <div 
-                                                key={subject.code}
-                                                style={{
-                                                    background: "white",
-                                                    padding: "8px 12px",
-                                                    borderRadius: "6px",
-                                                    border: "2px solid #667eea",
-                                                    fontSize: "13px",
-                                                    fontWeight: "500"
-                                                }}
-                                            >
-                                                {subject.code} - {subject.name}
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
                                 
-                                {prerequisites.length > 0 && (
+                                {allPrerequisites.length > 0 && (
                                     <div className="dep-section">
-                                        <div className="dep-title">📚 Prerrequisitos Totales ({prerequisites.length})</div>
-                                        <div className="dep-list">
-                                            {prerequisites.map(prereq => {
-                                                const prereqSubject = subjects.find(s => s.code === prereq);
-                                                const isAlsoSelected = selectedSubjects.some(s => s.code === prereq);
-                                                return (
-                                                    <div 
-                                                        key={prereq} 
-                                                        className="dep-tag"
-                                                        style={isAlsoSelected ? {background: "#667eea", color: "white"} : {}}
-                                                        onClick={() => {
-                                                            const subject = subjects.find(s => s.code === prereq);
-                                                            if (subject) handleSubjectClick(subject);
-                                                        }}
-                                                    >
-                                                        {prereq} - {prereqSubject?.name}
-                                                        {isAlsoSelected && " ✓"}
-                                                    </div>
-                                                );
-                                            })}
-                                        </div>
-                                        <p style={{fontSize: "12px", color: "#718096", marginTop: "8px"}}>
-                                            💡 Estas son todas las materias que necesitas aprobar antes de tomar las seleccionadas
-                                        </p>
-                                    </div>
-                                )}
-
-                                {dependents.length > 0 && (
-                                    <div className="dep-section">
-                                        <div className="dep-title">🎯 Materias Desbloqueadas ({dependents.length})</div>
-                                        <div className="dep-list">
-                                            {dependents.map(dep => {
-                                                const depSubject = subjects.find(s => s.code === dep);
-                                                const isAlsoSelected = selectedSubjects.some(s => s.code === dep);
-                                                return (
-                                                    <div 
-                                                        key={dep} 
-                                                        className="dep-tag"
-                                                        style={isAlsoSelected ? {background: "#667eea", color: "white"} : {}}
-                                                        onClick={() => {
-                                                            const subject = subjects.find(s => s.code === dep);
-                                                            if (subject) handleSubjectClick(subject);
-                                                        }}
-                                                    >
-                                                        {dep} - {depSubject?.name}
-                                                        {isAlsoSelected && " ✓"}
-                                                    </div>
-                                                );
-                                            })}
-                                        </div>
-                                        <p style={{fontSize: "12px", color: "#718096", marginTop: "8px"}}>
-                                            💡 Estas materias se desbloquean al aprobar las seleccionadas
-                                        </p>
-                                    </div>
-                                )}
-
-                                {selectedSubjects.length === 1 && (
-                                    <div className="dep-section">
-                                        <div className="dep-title">ℹ️ Detalles de la Materia</div>
-                                        <div style={{background: "#f7fafc", padding: "12px", borderRadius: "8px", fontSize: "14px"}}>
-                                            <p><strong>Código:</strong> {selectedSubjects[0].code}</p>
-                                            <p><strong>Nombre:</strong> {selectedSubjects[0].name}</p>
-                                            <p><strong>Semestre:</strong> {selectedSubjects[0].semester}</p>
-                                            <p><strong>Tipo:</strong> {typeColors[selectedSubjects[0].type].name}</p>
-                                            <p><strong>Horas Teóricas:</strong> {selectedSubjects[0].theory}</p>
-                                            <p><strong>Horas Prácticas:</strong> {selectedSubjects[0].lab}</p>
-                                            <p><strong>Créditos:</strong> {selectedSubjects[0].credits}</p>
-                                            {selectedSubjects[0].prereqs.length > 0 && (
-                                                <p><strong>Prerrequisitos Directos:</strong> {selectedSubjects[0].prereqs.join(", ")}</p>
-                                            )}
+                                        <div className="dep-title">📚 Requisitos:</div>
+                                        <div>
+                                            {allPrerequisites.map(prereq => (
+                                                <div 
+                                                    key={prereq} 
+                                                    className="dep-tag"
+                                                    onClick={() => {
+                                                        const s = subjects.find(sub => sub.code === prereq);
+                                                        if(s) handleSubjectClick(s);
+                                                    }}
+                                                >
+                                                    {prereq}
+                                                </div>
+                                            ))}
                                         </div>
                                     </div>
                                 )}
 
-                                {selectedSubjects.length > 1 && (
+                                {allDependents.length > 0 && (
                                     <div className="dep-section">
-                                        <div className="dep-title">📊 Resumen de Selección</div>
-                                        <div style={{background: "#f7fafc", padding: "12px", borderRadius: "8px", fontSize: "14px"}}>
-                                            <p><strong>Materias seleccionadas:</strong> {selectedSubjects.length}</p>
-                                            <p><strong>Créditos totales:</strong> {selectedSubjects.reduce((sum, s) => sum + s.credits, 0)}</p>
-                                            <p><strong>Prerrequisitos necesarios:</strong> {prerequisites.length}</p>
-                                            <p><strong>Materias que se desbloquean:</strong> {dependents.length}</p>
+                                        <div className="dep-title">🎯 Desbloquea:</div>
+                                        <div>
+                                            {allDependents.map(dep => (
+                                                <div 
+                                                    key={dep} 
+                                                    className="dep-tag"
+                                                    onClick={() => {
+                                                        const s = subjects.find(sub => sub.code === dep);
+                                                        if(s) handleSubjectClick(s);
+                                                    }}
+                                                >
+                                                    {dep}
+                                                </div>
+                                            ))}
                                         </div>
                                     </div>
                                 )}
@@ -822,27 +795,13 @@
                                 </div>
                             ))}
                         </div>
-
-                        <div className="legend" style={{marginTop: "12px"}}>
-                            <div className="legend-item">
-                                <div className="legend-color" style={{background: "#f0fff4", border: "2px solid #48bb78"}}></div>
-                                <span>Prerrequisito</span>
-                            </div>
-                            <div className="legend-item">
-                                <div className="legend-color" style={{background: "#fffaf0", border: "2px solid #ed8936"}}></div>
-                                <span>Dependiente</span>
-                            </div>
-                            <div className="legend-item">
-                                <div className="legend-color" style={{background: "white", border: "3px solid #667eea"}}></div>
-                                <span>Seleccionada</span>
-                            </div>
-                        </div>
                     </div>
                 </div>
             );
         }
 
-        ReactDOM.render(<App />, document.getElementById('root'));
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
     </script>
 </body>
 </html>
