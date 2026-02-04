@@ -3,845 +3,495 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Plan de Estudios Interactivo - Ingeniería en Computación</title>
-    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <title>Ingeniería - Mis Apuntes 2.0</title>
+    
+    <!-- Icono -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🚀</text></svg>">
+    
+    <!-- React y ReactDOM -->
+    <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+    
+    <!-- Babel -->
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        slate: { 850: '#1e293b', 900: '#0f172a' }
+                    }
+                }
+            }
+        }
+    </script>
+
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+        /* Scrollbar suave */
+        ::-webkit-scrollbar { width: 5px; height: 5px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        .dark ::-webkit-scrollbar-thumb { background: #475569; }
+        
+        /* Scrollbar muy delgado para navegación de semestres */
+        .semester-scroll::-webkit-scrollbar { height: 3px; }
+        .semester-scroll::-webkit-scrollbar-thumb { background: #9ca3af; border-radius: 10px; }
+        .dark .semester-scroll::-webkit-scrollbar-thumb { background: #4b5563; }
+
+        .fade-in { animation: fadeIn 0.2s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .iframe-container {
+            background-image: radial-gradient(#cbd5e1 1px, transparent 1px);
+            background-size: 20px 20px;
         }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            padding: 20px;
-        }
-
-        #root {
-            max-width: 1400px;
-            margin: 0 auto;
-        }
-
-        .header {
-            background: white;
-            border-radius: 12px;
-            padding: 24px;
-            margin-bottom: 20px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-        }
-
-        .header h1 {
-            color: #2d3748;
-            font-size: 28px;
-            margin-bottom: 8px;
-        }
-
-        .header p {
-            color: #718096;
-            font-size: 14px;
-        }
-
-        .controls {
-            background: white;
-            border-radius: 12px;
-            padding: 20px;
-            margin-bottom: 20px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-        }
-
-        .filters {
-            display: flex;
-            gap: 12px;
-            flex-wrap: wrap;
-            margin-bottom: 16px;
-        }
-
-        .filter-btn {
-            padding: 8px 16px;
-            border: 2px solid #e2e8f0;
-            border-radius: 8px;
-            background: white;
-            cursor: pointer;
-            font-size: 13px;
-            font-weight: 500;
-            transition: all 0.2s;
-        }
-
-        .filter-btn:hover {
-            border-color: #667eea;
-            background: #f7fafc;
-        }
-
-        .filter-btn.active {
-            background: #667eea;
-            color: white;
-            border-color: #667eea;
-        }
-
-        .search-box {
-            width: 100%;
-            padding: 12px;
-            border: 2px solid #e2e8f0;
-            border-radius: 8px;
-            font-size: 14px;
-            transition: border-color 0.2s;
-        }
-
-        .search-box:focus {
-            outline: none;
-            border-color: #667eea;
-        }
-
-        .plan-container {
-            background: white;
-            border-radius: 12px;
-            padding: 24px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            overflow-x: auto;
-        }
-
-        .semesters {
-            display: flex;
-            gap: 16px;
-            min-width: max-content;
-        }
-
-        .semester {
-            flex-shrink: 0;
-            width: 280px;
-        }
-
-        .semester-header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 12px;
-            border-radius: 8px 8px 0 0;
-            font-weight: 600;
-            text-align: center;
-            font-size: 16px;
-        }
-
-        .semester-content {
-            background: #f7fafc;
-            border: 2px solid #e2e8f0;
-            border-top: none;
-            border-radius: 0 0 8px 8px;
-            padding: 12px;
-            min-height: 200px;
-        }
-
-        .subject-card {
-            background: white;
-            border: 2px solid #e2e8f0;
-            border-radius: 8px;
-            padding: 12px;
-            margin-bottom: 12px;
-            cursor: pointer;
-            transition: all 0.2s;
-            position: relative;
-        }
-
-        .subject-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-        }
-
-        .subject-card.selected {
-            border-color: #667eea;
-            border-width: 3px;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
-        }
-
-        .subject-card.prerequisite {
-            border-color: #48bb78;
-            background: #f0fff4;
-        }
-
-        .subject-card.dependent {
-            border-color: #ed8936;
-            background: #fffaf0;
-        }
-
-        .subject-card.hidden {
-            opacity: 0.3;
-            pointer-events: none;
-        }
-
-        .subject-code {
-            font-weight: 700;
-            color: #2d3748;
-            font-size: 13px;
-            margin-bottom: 4px;
-        }
-
-        .subject-name {
-            color: #4a5568;
-            font-size: 12px;
-            margin-bottom: 8px;
-            line-height: 1.4;
-        }
-
-        .subject-credits {
-            display: flex;
-            gap: 8px;
-            font-size: 11px;
-            color: #718096;
-        }
-
-        .credit-badge {
-            background: #edf2f7;
-            padding: 2px 6px;
-            border-radius: 4px;
-            font-weight: 500;
-        }
-
-        .subject-type {
-            position: absolute;
-            top: 8px;
-            right: 8px;
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
-        }
-
-        .type-cb { background: #ff0000; }
-        .type-ci { background: #00ff00; }
-        .type-cs { background: #0000ff; }
-        .type-oc { background: #a52a2a; }
-        .type-ia { background: #ffa500; }
-
-        .info-panel {
-            background: white;
-            border-radius: 12px;
-            padding: 24px;
-            margin-top: 20px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-        }
-
-        .info-panel h2 {
-            color: #2d3748;
-            font-size: 20px;
-            margin-bottom: 16px;
-        }
-
-        .info-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 16px;
-            margin-bottom: 20px;
-        }
-
-        .info-item {
-            background: #f7fafc;
-            padding: 16px;
-            border-radius: 8px;
-            border-left: 4px solid #667eea;
-        }
-
-        .info-label {
-            font-size: 12px;
-            color: #718096;
-            margin-bottom: 4px;
-        }
-
-        .info-value {
-            font-size: 24px;
-            font-weight: 700;
-            color: #2d3748;
-        }
-
-        .legend {
-            display: flex;
-            gap: 16px;
-            flex-wrap: wrap;
-            margin-top: 16px;
-            padding-top: 16px;
-            border-top: 1px solid #e2e8f0;
-        }
-
-        .legend-item {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 13px;
-            color: #4a5568;
-        }
-
-        .legend-color {
-            width: 20px;
-            height: 20px;
-            border-radius: 4px;
-        }
-
-        .dependencies {
-            margin-top: 16px;
-        }
-
-        .dep-section {
-            margin-bottom: 12px;
-        }
-
-        .dep-title {
-            font-weight: 600;
-            color: #2d3748;
-            font-size: 14px;
-            margin-bottom: 8px;
-        }
-
-        .dep-list {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-        }
-
-        .dep-tag {
-            background: #edf2f7;
-            padding: 6px 12px;
-            border-radius: 6px;
-            font-size: 12px;
-            color: #4a5568;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .dep-tag:hover {
-            background: #667eea;
-            color: white;
-        }
-
-        @media (max-width: 768px) {
-            .semesters {
-                flex-direction: column;
-            }
-
-            .semester {
-                width: 100%;
-            }
+        .dark .iframe-container {
+            background-image: radial-gradient(#334155 1px, transparent 1px);
         }
     </style>
 </head>
-<body>
+<body class="bg-gray-50 text-slate-800 dark:bg-slate-900 dark:text-slate-100 font-sans overflow-hidden transition-colors duration-300">
     <div id="root"></div>
 
     <script type="text/babel">
-        const { useState, useMemo } = React;
+        const { useState, useMemo, useEffect } = React;
 
-        // Datos del plan de estudios
-        const subjects = [
+        // ==========================================
+        //  DATOS DEL PLAN DE ESTUDIOS
+        // ==========================================
+        const PLAN_ESTUDIOS = [
             // Semestre I
-            { code: "CB0100-L", name: "Laboratorio de Física I", semester: 1, theory: 0, lab: 1, credits: 2, type: "CB", prereqs: [] },
-            { code: "CB0500-L", name: "Laboratorio de Química", semester: 1, theory: 0, lab: 1, credits: 2, type: "CB", prereqs: [] },
-            { code: "CB0200-T", name: "Álgebra Superior", semester: 1, theory: 4, lab: 0, credits: 8, type: "CB", prereqs: [] },
-            { code: "CB0000-T", name: "Cálculo I", semester: 1, theory: 5, lab: 0, credits: 10, type: "CB", prereqs: [] },
-            { code: "CB0100-T", name: "Física I", semester: 1, theory: 4, lab: 0, credits: 8, type: "CB", prereqs: [] },
-            { code: "CS0000-T", name: "Inglés I", semester: 1, theory: 3, lab: 0, credits: 6, type: "CS", prereqs: [] },
-            { code: "OC0000-L", name: "Laboratorio de Herramientas Computacionales", semester: 1, theory: 0, lab: 2, credits: 4, type: "OC", prereqs: [] },
-            { code: "CB0500-T", name: "Química", semester: 1, theory: 3, lab: 0, credits: 6, type: "CB", prereqs: [] },
-            { code: "OC0100-T", name: "Técnicas de Estudio", semester: 1, theory: 2, lab: 0, credits: 4, type: "OC", prereqs: [] },
+            { id: 'algebra', name: '1.- Álgebra Superior', semester: 'I' },
+            { id: 'calculo1', name: '2.- Cálculo I', semester: 'I' },
+            { id: 'fisica1', name: '3.- Física I', semester: 'I' },
+            { id: 'tecnicas', name: '4.- Técnicas de Estudio', semester: 'I' },
+            { id: 'quimica', name: '5.- Química', semester: 'I' },
+            { id: 'ingles1', name: '6.- Inglés I', semester: 'I' },
+            { id: 'lab-fisica1', name: '7.- Laboratorio de Física I', semester: 'I' },
+            { id: 'lab-herra', name: '8.- Laboratorio de Herramientas Computacionales', semester: 'I' },
+            { id: 'lab-quimica', name: '9.- Laboratorio de Química', semester: 'I' },
             
             // Semestre II
-            { code: "CB0001-T", name: "Cálculo II", semester: 2, theory: 5, lab: 0, credits: 10, type: "CB", prereqs: ["CB0000-T"] },
-            { code: "CI0100-T", name: "Electrónica Analógica I", semester: 2, theory: 3, lab: 0, credits: 6, type: "CI", prereqs: ["CB0200-T"] },
-            { code: "CB0101-T", name: "Física II", semester: 2, theory: 4, lab: 0, credits: 8, type: "CB", prereqs: ["CB0100-T"] },
-            { code: "CS0001-T", name: "Inglés II", semester: 2, theory: 3, lab: 0, credits: 6, type: "CS", prereqs: ["CS0000-T"] },
-            { code: "CI0100-L", name: "Laboratorio de Electrónica Analógica I", semester: 2, theory: 0, lab: 2, credits: 4, type: "CI", prereqs: [] },
-            { code: "CB0101-L", name: "Laboratorio de Física II", semester: 2, theory: 0, lab: 1, credits: 2, type: "CB", prereqs: [] },
-            { code: "CI0000-L", name: "Laboratorio de Programación de Computadoras", semester: 2, theory: 0, lab: 2, credits: 4, type: "CI", prereqs: [] },
-            { code: "IA7000-T", name: "Lógica", semester: 2, theory: 3, lab: 0, credits: 6, type: "IA", prereqs: [] },
-            { code: "CI0000-T", name: "Programación de Computadoras", semester: 2, theory: 3, lab: 0, credits: 6, type: "CI", prereqs: ["OC0000-L"] },
-            
+            { id: 'calculo2', name: '1.- Cálculo II', semester: 'II' },
+            { id: 'fisica2', name: '2.- Física II', semester: 'II' },
+            { id: 'progra', name: '3.- Programación de Computadoras', semester: 'II' },
+            { id: 'electronica1', name: '4.- Electrónica Analógica I', semester: 'II' },
+            { id: 'logica', name: '5.- Lógica', semester: 'II' },
+            { id: 'ingles2', name: '6.- Inglés II', semester: 'II' },
+            { id: 'lab-fisica2', name: '7.- Laboratorio de Física II', semester: 'II' },
+            { id: 'lab-progra', name: '8.- Laboratorio de Programación de Computadoras', semester: 'II' },
+            { id: 'lab-electronica1', name: '9.- Laboratorio de Electrónica Analógica I', semester: 'II' },
+
             // Semestre III
-            { code: "CB0002-T", name: "Cálculo III", semester: 3, theory: 5, lab: 0, credits: 10, type: "CB", prereqs: ["CB0001-T"] },
-            { code: "CI0101-T", name: "Electrónica Analógica II", semester: 3, theory: 3, lab: 0, credits: 6, type: "CI", prereqs: ["CI0100-T"] },
-            { code: "CS0002-T", name: "Inglés III", semester: 3, theory: 3, lab: 0, credits: 6, type: "CS", prereqs: ["CS0001-T"] },
-            { code: "CI0101-L", name: "Laboratorio de Electrónica Analógica II", semester: 3, theory: 0, lab: 2, credits: 4, type: "CI", prereqs: [] },
-            { code: "CB0102-L", name: "Laboratorio de Teoría Electromagnética I", semester: 3, theory: 0, lab: 2, credits: 4, type: "CB", prereqs: [] },
-            { code: "CB0501-L", name: "Laboratorio de Termodinámica", semester: 3, theory: 0, lab: 1, credits: 2, type: "CB", prereqs: [] },
-            { code: "CB0300-T", name: "Métodos Numéricos", semester: 3, theory: 4, lab: 0, credits: 8, type: "CB", prereqs: ["CB0200-T", "CB0000-T"] },
-            { code: "CB0501-T", name: "Termodinámica", semester: 3, theory: 4, lab: 0, credits: 8, type: "CB", prereqs: ["CB0000-T"] },
-            { code: "CB0102-T", name: "Teoría Electromagnética I", semester: 3, theory: 4, lab: 0, credits: 8, type: "CB", prereqs: ["CB0101-T"] },
-            
+            { id: 'calculo3', name: '1.- Cálculo III', semester: 'III' },
+            { id: 'teoria-electro', name: '2.- Teoría Electromagnética I', semester: 'III' },
+            { id: 'metodos', name: '3.- Métodos Numéricos', semester: 'III' },
+            { id: 'electronica2', name: '4.- Electrónica Analógica II', semester: 'III' },
+            { id: 'termo', name: '5.- Termodinámica', semester: 'III' },
+            { id: 'ingles3', name: '6.- Inglés III', semester: 'III' },
+            { id: 'lab-teoria', name: '7.- Laboratorio de Teoría Electromagnética I', semester: 'III' },
+            { id: 'lab-electronica2', name: '8.- Laboratorio de Electrónica Analógica II', semester: 'III' },
+            { id: 'lab-termo', name: '9.- Laboratorio de Termodinámica', semester: 'III' },
+
             // Semestre IV
-            { code: "CB0003-T", name: "Cálculo IV", semester: 4, theory: 5, lab: 0, credits: 10, type: "CB", prereqs: ["CB0002-T"] },
-            { code: "CI0200-T", name: "Circuitos Eléctricos I", semester: 4, theory: 4, lab: 0, credits: 8, type: "CI", prereqs: ["CB0200-T"] },
-            { code: "CI0300-T", name: "Electrónica Digital I", semester: 4, theory: 4, lab: 0, credits: 8, type: "CI", prereqs: ["CI0100-T"] },
-            { code: "CS0003-T", name: "Inglés IV", semester: 4, theory: 3, lab: 0, credits: 6, type: "CS", prereqs: ["CS0002-T"] },
-            { code: "CI0300-L", name: "Laboratorio de Electrónica Digital I", semester: 4, theory: 0, lab: 2, credits: 4, type: "CI", prereqs: [] },
-            { code: "CI7100-T", name: "Estructuras de Datos", semester: 4, theory: 3, lab: 0, credits: 6, type: "CI", prereqs: ["CI0000-T"] },
-            { code: "CI7101-T", name: "Ingeniería de Programación", semester: 4, theory: 4, lab: 0, credits: 8, type: "CI", prereqs: ["CI0000-T"] },
-            
+            { id: 'calculo4', name: '1.- Cálculo IV', semester: 'IV' },
+            { id: 'circuitos1', name: '2.- Circuitos Eléctricos I', semester: 'IV' },
+            { id: 'discretas', name: '3.- Matemáticas Discretas', semester: 'IV' },
+            { id: 'digital1', name: '4.- Electrónica Digital I', semester: 'IV' },
+            { id: 'estructuras', name: '5.- Estructuras de Datos', semester: 'IV' },
+            { id: 'ing-prog', name: '6.- Ingeniería de Programación', semester: 'IV' },
+            { id: 'ingles4', name: '7.- Inglés IV', semester: 'IV' },
+            { id: 'lab-digital1', name: '8.- Laboratorio de Electrónica Digital I', semester: 'IV' },
+
             // Semestre V
-            { code: "CB7000-T", name: "Álgebra Lineal", semester: 5, theory: 4, lab: 0, credits: 8, type: "CB", prereqs: ["CB0200-T", "CB0000-T"] },
-            { code: "CB0600-T", name: "Probabilidad y Estadística", semester: 5, theory: 4, lab: 0, credits: 8, type: "CB", prereqs: ["CB0200-T", "CB0001-T"] },
-            { code: "CI0400-T", name: "Control Analógico I", semester: 5, theory: 3, lab: 0, credits: 6, type: "CI", prereqs: ["CB0003-T"] },
-            { code: "CI0400-L", name: "Laboratorio de Control Analógico I", semester: 5, theory: 0, lab: 2, credits: 4, type: "CI", prereqs: [] },
-            { code: "IA7300-T", name: "Paradigmas de Programación", semester: 5, theory: 3, lab: 0, credits: 6, type: "IA", prereqs: ["CI7101-T"] },
-            { code: "IA7300-L", name: "Laboratorio de Paradigmas de Programación", semester: 5, theory: 0, lab: 3, credits: 6, type: "IA", prereqs: [] },
-            { code: "CI7000-T", name: "Matemáticas Discretas", semester: 5, theory: 4, lab: 0, credits: 8, type: "CI", prereqs: ["IA7000-T"] },
-            { code: "CI7102-T", name: "Análisis de Algoritmos", semester: 5, theory: 4, lab: 0, credits: 8, type: "CI", prereqs: ["CI7100-T"] },
-            
+            { id: 'lineal', name: '1.- Álgebra Lineal', semester: 'V' },
+            { id: 'algoritmos', name: '2.- Análisis de Algoritmos', semester: 'V' },
+            { id: 'paradigmas', name: '3.- Paradigmas de Programación', semester: 'V' },
+            { id: 'proba', name: '4.- Probabilidad y Estadística', semester: 'V' },
+            { id: 'control1', name: '5.- Control Analógico I', semester: 'V' },
+            { id: 'lenguajes', name: '6.- Lenguajes Formales y Autómatas', semester: 'V' },
+            { id: 'lab-paradigmas', name: '7.- Laboratorio de Paradigmas de Programación', semester: 'V' },
+            { id: 'lab-control1', name: '8.- Laboratorio de Control Analógico I', semester: 'V' },
+
             // Semestre VI
-            { code: "IA3100-T", name: "Comunicaciones I", semester: 6, theory: 4, lab: 0, credits: 8, type: "IA", prereqs: ["CB0003-T", "CB0102-T"] },
-            { code: "IA3100-L", name: "Laboratorio de Comunicaciones I", semester: 6, theory: 0, lab: 1, credits: 2, type: "IA", prereqs: [] },
-            { code: "CI0401-T", name: "Control Analógico II", semester: 6, theory: 3, lab: 0, credits: 6, type: "CI", prereqs: ["CI0400-T"] },
-            { code: "CI0401-L", name: "Laboratorio de Control Analógico II", semester: 6, theory: 0, lab: 2, credits: 4, type: "CI", prereqs: [] },
-            { code: "IA7200-T", name: "Graficación", semester: 6, theory: 3, lab: 0, credits: 6, type: "IA", prereqs: ["CI0000-T"] },
-            { code: "IA7200-L", name: "Laboratorio de Graficación", semester: 6, theory: 0, lab: 3, credits: 6, type: "IA", prereqs: [] },
-            { code: "OC0300-T", name: "Economía", semester: 6, theory: 3, lab: 0, credits: 6, type: "OC", prereqs: [] },
-            { code: "CI7001-T", name: "Lenguajes Formales y Autómatas", semester: 6, theory: 3, lab: 0, credits: 6, type: "CI", prereqs: ["CI7000-T"] },
-            { code: "IA7400-T", name: "Organización de Computadoras", semester: 6, theory: 3, lab: 0, credits: 6, type: "IA", prereqs: ["CI0300-T"] },
-            
+            { id: 'graficacion', name: '1.- Graficación', semester: 'VI' },
+            { id: 'org-comp', name: '2.- Organización de Computadoras', semester: 'VI' },
+            { id: 'compiladores', name: '3.- Compiladores', semester: 'VI' },
+            { id: 'control2', name: '4.- Control Analógico II', semester: 'VI' },
+            { id: 'comms1', name: '5.- Comunicaciones I', semester: 'VI' },
+            { id: 'economia', name: '6.- Economía', semester: 'VI' },
+            { id: 'lab-control2', name: '7.- Laboratorio de Control Analógico II', semester: 'VI' },
+            { id: 'lab-comms', name: '8.- Laboratorio de Comunicaciones', semester: 'VI' },
+            { id: 'lab-graf', name: '9.- Laboratorio de Graficación', semester: 'VI' },
+
             // Semestre VII
-            { code: "IA7500-T", name: "Bases de Datos", semester: 7, theory: 4, lab: 0, credits: 8, type: "IA", prereqs: ["CI7101-T", "IA7000-T"] },
-            { code: "IA7500-L", name: "Laboratorio de Bases de Datos", semester: 7, theory: 0, lab: 2, credits: 4, type: "IA", prereqs: [] },
-            { code: "IA7100-T", name: "Compiladores", semester: 7, theory: 3, lab: 0, credits: 6, type: "IA", prereqs: ["CI7001-T"] },
-            { code: "IA7800-T", name: "Investigación de Operaciones", semester: 7, theory: 3, lab: 0, credits: 6, type: "IA", prereqs: ["CB0001-T", "CB7000-T"] },
-            { code: "IA7600-T", name: "Redes de Computadoras", semester: 7, theory: 4, lab: 0, credits: 8, type: "IA", prereqs: ["CI0000-T", "CI0300-T"] },
-            { code: "IA7600-L", name: "Laboratorio de Redes de Computadoras", semester: 7, theory: 0, lab: 3, credits: 6, type: "IA", prereqs: [] },
-            { code: "CI7002-T", name: "Teoría de la Computación", semester: 7, theory: 4, lab: 0, credits: 8, type: "CI", prereqs: ["CI7001-T"] },
-            
+            { id: 'teoria-comp', name: '1.- Teoría de la Computación', semester: 'VII' },
+            { id: 'inv-op', name: '2.- Investigación de Operaciones', semester: 'VII' },
+            { id: 'bd', name: '3.- Bases de Datos', semester: 'VII' },
+            { id: 'redes', name: '4.- Redes de Computadoras', semester: 'VII' },
+            { id: 'temas7', name: '5.- Tema Selecto', semester: 'VII' },
+            { id: 'lab-redes', name: '6.- Laboratorio de Redes de Computadoras', semester: 'VII' },
+            { id: 'lab-bd', name: '7.- Laboratorio de Bases de Datos', semester: 'VII' },
+
             // Semestre VIII
-            { code: "OC0400-T", name: "Administración", semester: 8, theory: 3, lab: 0, credits: 6, type: "OC", prereqs: [] },
-            { code: "CS0200-T", name: "Ética Profesional", semester: 8, theory: 3, lab: 0, credits: 6, type: "CS", prereqs: [] },
-            { code: "IA3400-T", name: "Control Digital I", semester: 8, theory: 3, lab: 0, credits: 6, type: "IA", prereqs: ["CI0401-T"] },
-            { code: "IA3400-L", name: "Laboratorio de Control Digital I", semester: 8, theory: 0, lab: 1, credits: 2, type: "IA", prereqs: [] },
-            { code: "CI7300-T", name: "Modelos Probabilistas", semester: 8, theory: 3, lab: 0, credits: 6, type: "CI", prereqs: ["CB0600-T"] },
-            { code: "CI7200-T", name: "Sistemas Operativos", semester: 8, theory: 4, lab: 0, credits: 8, type: "CI", prereqs: ["CI0000-T"] },
-            { code: "CI7200-L", name: "Laboratorio de Sistemas Operativos", semester: 8, theory: 0, lab: 5, credits: 10, type: "CI", prereqs: [] },
-            
+            { id: 'modelos', name: '1.- Modelos Probabilistas', semester: 'VIII' },
+            { id: 'control-dig1', name: '2.- Control Digital I', semester: 'VIII' },
+            { id: 'so', name: '3.- Sistemas Operativos', semester: 'VIII' },
+            { id: 'admin', name: '4.- Administración', semester: 'VIII' },
+            { id: 'etica', name: '5.- Ética Profesional', semester: 'VIII' },
+            { id: 'temas8', name: '6.- Tema Selecto', semester: 'VIII' },
+            { id: 'lab-control-dig1', name: '7.- Laboratorio de Control Digital I', semester: 'VIII' },
+            { id: 'lab-so', name: '8.- Laboratorio de Sistemas Operativos', semester: 'VIII' },
+            { id: 'lab-temas8', name: '9.- Laboratorio de Tema Selecto', semester: 'VIII' },
+
             // Semestre IX
-            { code: "OC0200-T", name: "Contabilidad", semester: 9, theory: 3, lab: 0, credits: 6, type: "OC", prereqs: [] },
-            { code: "CS0100-T", name: "Expresión Oral y Escrita", semester: 9, theory: 4, lab: 0, credits: 8, type: "CS", prereqs: [] },
-            { code: "IA7700-T", name: "Inteligencia Artificial", semester: 9, theory: 3, lab: 0, credits: 6, type: "IA", prereqs: ["CI7000-T", "IA7300-T"] },
-            { code: "IA7700-L", name: "Laboratorio de Inteligencia Artificial", semester: 9, theory: 0, lab: 3, credits: 6, type: "IA", prereqs: [] },
-            
+            { id: 'expresion', name: '1.- Expresión Oral y Escrita', semester: 'IX' },
+            { id: 'contabilidad', name: '2.- Contabilidad', semester: 'IX' },
+            { id: 'temas9-1', name: '3.- Tema Selecto', semester: 'IX' },
+            { id: 'temas9-2', name: '4.- Tema Selecto', semester: 'IX' },
+            { id: 'temas9-3', name: '5.- Tema Selecto', semester: 'IX' },
+            { id: 'lab-temas9', name: '6.- Laboratorio de Tema Selecto', semester: 'IX' },
+            { id: 'ia', name: '7.- Inteligencia Artificial', semester: 'IX' },
+            { id: 'lab-ia', name: '8.- Laboratorio de Inteligencia Artificial', semester: 'IX' },
+
             // Semestre X
-            { code: "OC0500-T", name: "Seminario de Tesis", semester: 10, theory: 4, lab: 0, credits: 8, type: "OC", prereqs: [] },
+            { id: 'tesis', name: '1.- Seminario de Tesis', semester: 'X' },
         ];
 
-        // Mapeo de dependencias
-        const dependencyMap = {};
-        subjects.forEach(subject => {
-            dependencyMap[subject.code] = subject.prereqs;
+        // ==========================================
+        //  RECURSOS GLOBALES
+        // ==========================================
+        
+        const CUSTOM_PDFS = {
+            // Se asume que estos archivos existen en la carpeta ./pdfs/
+            // Si no existen, el iframe mostrará error o página en blanco
+        };
+        
+        const MIS_DOCUMENTOS = [];
+        
+        PLAN_ESTUDIOS.forEach(subject => {
+            const customPdf = CUSTOM_PDFS[subject.id] || {};
+            MIS_DOCUMENTOS.push({
+                id: `doc-${subject.id}`,
+                subjectId: subject.id,
+                title: `Apuntes - ${subject.name}`,
+                pdfUrl: `./pdfs/${customPdf.apuntes || subject.id + '_apuntes.pdf'}`,
+                type: 'apuntes'
+            });
+            
+            for (let i = 1; i <= 4; i++) {
+                MIS_DOCUMENTOS.push({
+                    id: `ex-${subject.id}-p${i}`,
+                    subjectId: subject.id,
+                    title: `Parcial ${i} - ${subject.name}`,
+                    pdfUrl: `./pdfs/${customPdf['p' + i] || subject.id + '_p' + i + '.pdf'}`,
+                    type: 'examen',
+                    parcial: i
+                });
+            }
         });
 
-        // Función para encontrar materias dependientes
-        function getDependents(code) {
-            return subjects
-                .filter(s => s.prereqs.includes(code))
-                .map(s => s.code);
-        }
+        // --- Iconos ---
+        const Icon = ({ path, className }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+                {path}
+            </svg>
+        );
 
-        // Función recursiva para obtener todos los prerrequisitos
-        function getAllPrerequisites(code, visited = new Set()) {
-            if (visited.has(code)) return [];
-            visited.add(code);
-            
-            const subject = subjects.find(s => s.code === code);
-            if (!subject) return [];
-            
-            let allPrereqs = [...subject.prereqs];
-            subject.prereqs.forEach(prereq => {
-                allPrereqs = [...allPrereqs, ...getAllPrerequisites(prereq, visited)];
-            });
-            
-            return [...new Set(allPrereqs)];
-        }
-
-        // Función recursiva para obtener todos los dependientes
-        function getAllDependents(code, visited = new Set()) {
-            if (visited.has(code)) return [];
-            visited.add(code);
-            
-            const directDeps = getDependents(code);
-            let allDeps = [...directDeps];
-            
-            directDeps.forEach(dep => {
-                allDeps = [...allDeps, ...getAllDependents(dep, visited)];
-            });
-            
-            return [...new Set(allDeps)];
-        }
-
-        const typeColors = {
-            CB: { name: "Ciencias Básicas", color: "#ff0000" },
-            CI: { name: "Ciencias de la Ingeniería", color: "#00ff00" },
-            CS: { name: "Ciencias Sociales", color: "#0000ff" },
-            OC: { name: "Otras Complementarias", color: "#a52a2a" },
-            IA: { name: "Ingeniería Aplicada", color: "#ffa500" }
+        const Icons = {
+            Rocket: (props) => <Icon {...props} path={<><path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"/><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"/><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"/><path d="m2 22 3-3"/><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/></>} />,
+            Search: (props) => <Icon {...props} path={<><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></>} />,
+            FileText: (props) => <Icon {...props} path={<><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><line x1="16" x2="8" y1="13" y2="13"/><line x1="16" x2="8" y1="17" y2="17"/></>} />,
+            Menu: (props) => <Icon {...props} path={<><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/></>} />,
+            Moon: (props) => <Icon {...props} path={<><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></>} />,
+            Sun: (props) => <Icon {...props} path={<><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/></>} />,
+            ChevronDown: (props) => <Icon {...props} path={<><path d="m6 9 6 6 6-6"/></>} />,
+            ChevronRight: (props) => <Icon {...props} path={<><path d="m9 18 6-6-6-6"/></>} />,
+            Lock: (props) => <Icon {...props} path={<><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></>} />,
+            X: (props) => <Icon {...props} path={<><path d="M18 6 6 18"/><path d="m6 6 12 12"/></>} />,
+            BookOpen: (props) => <Icon {...props} path={<><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></>} />,
+            GraduationCap: (props) => <Icon {...props} path={<><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></>} />,
+            Sigma: (props) => <Icon {...props} path={<><path d="M18 7V4H6l10 8-10 8h12v-3"/></>} />,
+            Zap: (props) => <Icon {...props} path={<><path d="M13 2 L3 14h9l-1 8 10-12h-9l1-8z"/></>} />,
+            Lightbulb: (props) => <Icon {...props} path={<><path d="M15 14c.2 0 .3.1.3.3l.4 2.7c0 .3-.2.5-.5.5H8.8c-.3 0-.5-.2-.5-.5l.4-2.7c0-.2.1-.3.3-.3h6z"/><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-7 7c0 2.3 1 4.3 2.7 5.7h8.6C18 13.3 19 11.3 19 9a7 7 0 0 0-7-7z"/></>} />,
+            CheckCircle: (props) => <Icon {...props} path={<><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></>} />,
+            LayoutGrid: (props) => <Icon {...props} path={<><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></>} />,
         };
 
+        const SUBJECT_COLORS = [
+            { bg: 'bg-blue-100 dark:bg-blue-900/30', text: 'text-blue-700 dark:text-blue-300' },
+            { bg: 'bg-emerald-100 dark:bg-emerald-900/30', text: 'text-emerald-700 dark:text-emerald-300' },
+            { bg: 'bg-orange-100 dark:bg-orange-900/30', text: 'text-orange-700 dark:text-orange-300' },
+            { bg: 'bg-purple-100 dark:bg-purple-900/30', text: 'text-purple-700 dark:text-purple-300' },
+            { bg: 'bg-pink-100 dark:bg-pink-900/30', text: 'text-pink-700 dark:text-pink-300' },
+            { bg: 'bg-cyan-100 dark:bg-cyan-900/30', text: 'text-cyan-700 dark:text-cyan-300' },
+        ];
+
+        const SEMESTERS = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X'];
+
         function App() {
-            const [selectedSubjects, setSelectedSubjects] = useState([]);
-            const [filterType, setFilterType] = useState("all");
-            const [searchTerm, setSearchTerm] = useState("");
+            const [currentSemester, setCurrentSemester] = useState('I');
+            const [selectedNoteId, setSelectedNoteId] = useState(null);
+            const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+            const [searchTerm, setSearchTerm] = useState('');
+            const [darkMode, setDarkMode] = useState(() => localStorage.getItem('theme') === 'dark');
+            const [expandedSubjects, setExpandedSubjects] = useState({});
+            
+            // "Materias" es el estado por defecto ya que los otros son enlaces externos
+            const activeTab = 'materias'; 
 
-            const filteredSubjects = useMemo(() => {
-                return subjects.filter(subject => {
-                    const matchesType = filterType === "all" || subject.type === filterType;
-                    const matchesSearch = searchTerm === "" || 
-                        subject.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                        subject.name.toLowerCase().includes(searchTerm.toLowerCase());
-                    return matchesType && matchesSearch;
-                });
-            }, [filterType, searchTerm]);
+            useEffect(() => {
+                document.documentElement.classList.toggle('dark', darkMode);
+                localStorage.setItem('theme', darkMode ? 'dark' : 'light');
+            }, [darkMode]);
 
-            const handleSubjectClick = (subject) => {
-                setSelectedSubjects(prev => {
-                    const isSelected = prev.some(s => s.code === subject.code);
-                    if (isSelected) {
-                        return prev.filter(s => s.code !== subject.code);
-                    } else {
-                        return [...prev, subject];
-                    }
-                });
+            const visibleSubjects = useMemo(() => {
+                return PLAN_ESTUDIOS
+                    .filter(s => s.semester === currentSemester)
+                    .map((s, i) => ({ ...s, color: SUBJECT_COLORS[i % SUBJECT_COLORS.length] }))
+                    .filter(s => s.name.toLowerCase().includes(searchTerm.toLowerCase()));
+            }, [currentSemester, searchTerm]);
+
+            const toggleExpand = (id) => {
+                setExpandedSubjects(prev => ({ ...prev, [id]: !prev[id] }));
             };
 
-            const clearSelection = () => {
-                setSelectedSubjects([]);
-            };
-
-            // Combinar todos los prerrequisitos y dependientes de las materias seleccionadas
-            const allPrerequisites = useMemo(() => {
-                const prereqs = new Set();
-                selectedSubjects.forEach(subject => {
-                    getAllPrerequisites(subject.code).forEach(p => prereqs.add(p));
-                });
-                return Array.from(prereqs);
-            }, [selectedSubjects]);
-
-            const allDependents = useMemo(() => {
-                const deps = new Set();
-                selectedSubjects.forEach(subject => {
-                    getAllDependents(subject.code).forEach(d => deps.add(d));
-                });
-                return Array.from(deps);
-            }, [selectedSubjects]);
-
-            const prerequisites = allPrerequisites;
-            const dependents = allDependents;
-
-            const totalCredits = subjects.reduce((sum, s) => sum + s.credits, 0);
-            const typeStats = Object.keys(typeColors).map(type => ({
-                type,
-                count: subjects.filter(s => s.type === type).length,
-                credits: subjects.filter(s => s.type === type).reduce((sum, s) => sum + s.credits, 0)
-            }));
-
-            const semesterGroups = Array.from({ length: 10 }, (_, i) => i + 1);
+            const activeNoteData = MIS_DOCUMENTOS.find(n => n.id === selectedNoteId);
 
             return (
-                <div>
-                    <div className="header">
-                        <h1>Plan de Estudios - Ingeniería en Computación</h1>
-                        <p>Haz clic en las materias para seleccionarlas (puedes seleccionar múltiples). Explora sus dependencias y requisitos de manera interactiva.</p>
-                    </div>
-
-                    <div className="controls">
-                        <div className="filters">
-                            <button 
-                                className={`filter-btn ${filterType === "all" ? "active" : ""}`}
-                                onClick={() => setFilterType("all")}
-                            >
-                                Todas
-                            </button>
-                            {Object.entries(typeColors).map(([type, info]) => (
-                                <button 
-                                    key={type}
-                                    className={`filter-btn ${filterType === type ? "active" : ""}`}
-                                    onClick={() => setFilterType(type)}
-                                >
-                                    {info.name}
-                                </button>
-                            ))}
-                        </div>
-                        <input 
-                            type="text"
-                            className="search-box"
-                            placeholder="Buscar materia por código o nombre..."
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                        />
-                    </div>
-
-                    <div className="plan-container">
-                        <div className="semesters">
-                            {semesterGroups.map(sem => {
-                                const semesterSubjects = filteredSubjects.filter(s => s.semester === sem);
-                                
-                                return (
-                                    <div key={sem} className="semester">
-                                        <div className="semester-header">
-                                            Semestre {sem}
-                                        </div>
-                                        <div className="semester-content">
-                                            {semesterSubjects.map(subject => {
-                                                const isSelected = selectedSubjects.some(s => s.code === subject.code);
-                                                const isPrereq = prerequisites.includes(subject.code);
-                                                const isDependent = dependents.includes(subject.code);
-
-                                                return (
-                                                    <div 
-                                                        key={subject.code}
-                                                        className={`subject-card ${isSelected ? "selected" : ""} ${isPrereq ? "prerequisite" : ""} ${isDependent ? "dependent" : ""}`}
-                                                        onClick={() => handleSubjectClick(subject)}
-                                                    >
-                                                        <div className={`subject-type type-${subject.type.toLowerCase()}`}></div>
-                                                        <div className="subject-code">{subject.code}</div>
-                                                        <div className="subject-name">{subject.name}</div>
-                                                        <div className="subject-credits">
-                                                            <span className="credit-badge">T: {subject.theory}</span>
-                                                            <span className="credit-badge">P: {subject.lab}</span>
-                                                            <span className="credit-badge">C: {subject.credits}</span>
-                                                        </div>
-                                                    </div>
-                                                );
-                                            })}
-                                        </div>
+                <div className="flex h-screen bg-white dark:bg-slate-900 transition-colors">
+                    
+                    {/* SIDEBAR */}
+                    <aside className={`fixed inset-y-0 left-0 z-40 w-80 bg-gray-50 dark:bg-slate-850 border-r border-gray-200 dark:border-slate-700 transition-transform md:relative md:translate-x-0 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+                        <div className="flex flex-col h-full">
+                            
+                            {/* Header Sidebar */}
+                            <div className="p-6 border-b border-gray-200 dark:border-slate-700">
+                                <div className="flex items-center justify-between mb-6">
+                                    <div className="flex items-center space-x-2 text-indigo-600 dark:text-indigo-400 font-bold text-xl">
+                                        <Icons.Rocket className="w-6 h-6" />
+                                        <span>Ingeniería 2.0</span>
                                     </div>
-                                );
-                            })}
-                        </div>
-                    </div>
-
-                    <div className="info-panel">
-                        <h2>Información del Plan de Estudios</h2>
-                        <div className="info-grid">
-                            <div className="info-item">
-                                <div className="info-label">Total de Materias</div>
-                                <div className="info-value">{subjects.length}</div>
-                            </div>
-                            <div className="info-item">
-                                <div className="info-label">Total de Créditos</div>
-                                <div className="info-value">{totalCredits}</div>
-                            </div>
-                            <div className="info-item">
-                                <div className="info-label">Semestres</div>
-                                <div className="info-value">10</div>
-                            </div>
-                            <div className="info-item">
-                                <div className="info-label">Promedio por Semestre</div>
-                                <div className="info-value">{Math.round(totalCredits / 10)}</div>
-                            </div>
-                        </div>
-
-                        <div style={{marginTop: "20px", display: "flex", gap: "12px", flexWrap: "wrap"}}>
-                            <a 
-                                href="index.html" 
-                                style={{
-                                    padding: "12px 24px",
-                                    background: "#667eea",
-                                    color: "white",
-                                    textDecoration: "none",
-                                    borderRadius: "8px",
-                                    fontWeight: "600",
-                                    fontSize: "14px",
-                                    display: "inline-flex",
-                                    alignItems: "center",
-                                    gap: "8px",
-                                    transition: "all 0.2s",
-                                    boxShadow: "0 4px 6px rgba(0,0,0,0.1)"
-                                }}
-                                onMouseOver={(e) => e.currentTarget.style.background = "#5568d3"}
-                                onMouseOut={(e) => e.currentTarget.style.background = "#667eea"}
-                            >
-                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
-                                    <polyline points="9 22 9 12 15 12 15 22"/>
-                                </svg>
-                                Volver al Inicio
-                            </a>
-                            <a 
-                                href="recursos.html" 
-                                style={{
-                                    padding: "12px 24px",
-                                    background: "#10b981",
-                                    color: "white",
-                                    textDecoration: "none",
-                                    borderRadius: "8px",
-                                    fontWeight: "600",
-                                    fontSize: "14px",
-                                    display: "inline-flex",
-                                    alignItems: "center",
-                                    gap: "8px",
-                                    transition: "all 0.2s",
-                                    boxShadow: "0 4px 6px rgba(0,0,0,0.1)"
-                                }}
-                                onMouseOver={(e) => e.currentTarget.style.background = "#059669"}
-                                onMouseOut={(e) => e.currentTarget.style.background = "#10b981"}
-                            >
-                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                    <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/>
-                                    <polyline points="14 2 14 8 20 8"/>
-                                </svg>
-                                Ver Recursos
-                            </a>
-                        </div>
-
-                        {selectedSubjects.length > 0 && (
-                            <div className="dependencies">
-                                <div style={{display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px"}}>
-                                    <h2>Materias Seleccionadas ({selectedSubjects.length})</h2>
-                                    <button 
-                                        onClick={clearSelection}
-                                        style={{
-                                            padding: "8px 16px",
-                                            background: "#e53e3e",
-                                            color: "white",
-                                            border: "none",
-                                            borderRadius: "6px",
-                                            cursor: "pointer",
-                                            fontWeight: "500",
-                                            fontSize: "13px"
-                                        }}
-                                    >
-                                        Limpiar Selección
+                                    <button onClick={() => setDarkMode(!darkMode)} className="p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-slate-700 transition-colors">
+                                        {darkMode ? <Icons.Sun className="w-5 h-5" /> : <Icons.Moon className="w-5 h-5" />}
                                     </button>
                                 </div>
 
-                                <div style={{marginBottom: "20px", padding: "12px", background: "#f7fafc", borderRadius: "8px"}}>
-                                    <div style={{display: "flex", flexWrap: "wrap", gap: "8px"}}>
-                                        {selectedSubjects.map(subject => (
-                                            <div 
-                                                key={subject.code}
-                                                style={{
-                                                    background: "white",
-                                                    padding: "8px 12px",
-                                                    borderRadius: "6px",
-                                                    border: "2px solid #667eea",
-                                                    fontSize: "13px",
-                                                    fontWeight: "500"
-                                                }}
+                                {/* NAVEGACIÓN PRINCIPAL */}
+                                <div className="grid grid-cols-3 gap-1 mb-6 bg-gray-200 dark:bg-slate-800 p-1 rounded-xl">
+                                    <button 
+                                        className="flex flex-col items-center justify-center py-2 px-1 rounded-lg transition-all bg-white dark:bg-slate-700 shadow-sm text-indigo-600 dark:text-white"
+                                    >
+                                        <Icons.LayoutGrid className="w-4 h-4 mb-1" />
+                                        <span className="text-[9px] font-bold uppercase">Materias</span>
+                                    </button>
+                                    
+                                    {/* ENLACE A PLAN.HTML */}
+                                    <a 
+                                        href="plan.html"
+                                        className="flex flex-col items-center justify-center py-2 px-1 rounded-lg transition-all text-gray-500 hover:bg-gray-100 dark:hover:bg-slate-700/50"
+                                    >
+                                        <Icons.GraduationCap className="w-4 h-4 mb-1" />
+                                        <span className="text-[9px] font-bold uppercase">Mi Plan</span>
+                                    </a>
+
+                                    {/* ENLACE A RECURSOS.HTML */}
+                                    <a 
+                                        href="recursos.html"
+                                        className="flex flex-col items-center justify-center py-2 px-1 rounded-lg transition-all text-gray-500 hover:bg-gray-100 dark:hover:bg-slate-700/50"
+                                    >
+                                        <Icons.Sigma className="w-4 h-4 mb-1" />
+                                        <span className="text-[9px] font-bold uppercase">Recursos</span>
+                                    </a>
+                                </div>
+
+                                <div className="fade-in">
+                                    <div className="semester-scroll flex space-x-1 overflow-x-auto mb-4 bg-gray-200 dark:bg-slate-800 p-1 rounded-xl" style={{scrollbarWidth: 'thin'}}>
+                                        {SEMESTERS.map(sem => (
+                                            <button 
+                                                key={sem}
+                                                onClick={() => setCurrentSemester(sem)}
+                                                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex-shrink-0 ${currentSemester === sem ? 'bg-white dark:bg-slate-600 text-indigo-600 dark:text-white shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'}`}
                                             >
-                                                {subject.code} - {subject.name}
-                                            </div>
+                                                {sem}
+                                            </button>
                                         ))}
                                     </div>
+
+                                    <div className="relative">
+                                        <Icons.Search className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
+                                        <input 
+                                            type="text" 
+                                            placeholder="Filtrar materia..."
+                                            className="w-full pl-9 pr-4 py-2 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl text-sm outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
+                                            value={searchTerm}
+                                            onChange={(e) => setSearchTerm(e.target.value)}
+                                        />
+                                    </div>
                                 </div>
-                                
-                                {prerequisites.length > 0 && (
-                                    <div className="dep-section">
-                                        <div className="dep-title">📚 Prerrequisitos Totales ({prerequisites.length})</div>
-                                        <div className="dep-list">
-                                            {prerequisites.map(prereq => {
-                                                const prereqSubject = subjects.find(s => s.code === prereq);
-                                                const isAlsoSelected = selectedSubjects.some(s => s.code === prereq);
-                                                return (
-                                                    <div 
-                                                        key={prereq} 
-                                                        className="dep-tag"
-                                                        style={isAlsoSelected ? {background: "#667eea", color: "white"} : {}}
-                                                        onClick={() => {
-                                                            const subject = subjects.find(s => s.code === prereq);
-                                                            if (subject) handleSubjectClick(subject);
-                                                        }}
+                            </div>
+
+                            {/* CONTENIDO LISTA MATERIAS */}
+                            <div className="flex-1 overflow-y-auto p-4 space-y-2 custom-scrollbar">
+                                <div className="fade-in space-y-2">
+                                    <h3 className="px-2 text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">Materias - Semestre {currentSemester}</h3>
+                                    {visibleSubjects.length === 0 ? (
+                                        <p className="text-center text-xs text-gray-400 py-10 italic">No hay resultados.</p>
+                                    ) : (
+                                        visibleSubjects.map(subject => {
+                                            const isExp = expandedSubjects[subject.id];
+                                            const subjectDocs = MIS_DOCUMENTOS.filter(d => d.subjectId === subject.id);
+                                            const notes = subjectDocs.filter(d => d.type === 'apuntes');
+                                            const exams = subjectDocs.filter(d => d.type === 'examen');
+
+                                            return (
+                                                <div key={subject.id} className="group">
+                                                    <button 
+                                                        onClick={() => toggleExpand(subject.id)}
+                                                        className={`w-full flex items-center justify-between p-3 rounded-xl transition-all ${isExp ? 'bg-indigo-50 dark:bg-indigo-900/20' : 'hover:bg-gray-100 dark:hover:bg-slate-800'}`}
                                                     >
-                                                        {prereq} - {prereqSubject?.name}
-                                                        {isAlsoSelected && " ✓"}
-                                                    </div>
-                                                );
-                                            })}
-                                        </div>
-                                        <p style={{fontSize: "12px", color: "#718096", marginTop: "8px"}}>
-                                            💡 Estas son todas las materias que necesitas aprobar antes de tomar las seleccionadas
-                                        </p>
-                                    </div>
-                                )}
+                                                        <div className="flex items-center space-x-3 overflow-hidden">
+                                                            <div className={`w-2 h-2 rounded-full flex-shrink-0 ${subject.color.bg.split(' ')[0]}`}></div>
+                                                            <span className={`text-sm font-medium truncate ${isExp ? 'text-indigo-700 dark:text-indigo-300' : 'text-slate-600 dark:text-slate-400'}`}>
+                                                                {subject.name}
+                                                            </span>
+                                                        </div>
+                                                        {isExp ? <Icons.ChevronDown className="w-4 h-4 opacity-50" /> : <Icons.ChevronRight className="w-4 h-4 opacity-50" />}
+                                                    </button>
 
-                                {dependents.length > 0 && (
-                                    <div className="dep-section">
-                                        <div className="dep-title">🎯 Materias Desbloqueadas ({dependents.length})</div>
-                                        <div className="dep-list">
-                                            {dependents.map(dep => {
-                                                const depSubject = subjects.find(s => s.code === dep);
-                                                const isAlsoSelected = selectedSubjects.some(s => s.code === dep);
-                                                return (
-                                                    <div 
-                                                        key={dep} 
-                                                        className="dep-tag"
-                                                        style={isAlsoSelected ? {background: "#667eea", color: "white"} : {}}
-                                                        onClick={() => {
-                                                            const subject = subjects.find(s => s.code === dep);
-                                                            if (subject) handleSubjectClick(subject);
-                                                        }}
-                                                    >
-                                                        {dep} - {depSubject?.name}
-                                                        {isAlsoSelected && " ✓"}
-                                                    </div>
-                                                );
-                                            })}
-                                        </div>
-                                        <p style={{fontSize: "12px", color: "#718096", marginTop: "8px"}}>
-                                            💡 Estas materias se desbloquean al aprobar las seleccionadas
-                                        </p>
-                                    </div>
-                                )}
+                                                    {isExp && (
+                                                        <div className="ml-4 mt-1 space-y-1 border-l-2 border-indigo-100 dark:border-indigo-900/30 pl-3 fade-in">
+                                                            <div>
+                                                                <div className="text-[9px] font-bold text-gray-400 uppercase tracking-wider p-1">Documentos</div>
+                                                                {notes.map(note => (
+                                                                    <button 
+                                                                        key={note.id}
+                                                                        onClick={() => setSelectedNoteId(note.id)}
+                                                                        className={`w-full text-left p-2 rounded-lg text-xs flex items-center space-x-2 transition-colors ${selectedNoteId === note.id ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-500 dark:text-slate-400 hover:bg-white dark:hover:bg-slate-700'}`}
+                                                                    >
+                                                                        <Icons.FileText className="w-3.5 h-3.5 shrink-0" />
+                                                                        <span className="truncate">{note.title}</span>
+                                                                    </button>
+                                                                ))}
+                                                            </div>
+                                                            <div className="mt-2">
+                                                                <div className="text-[9px] font-bold text-gray-400 uppercase tracking-wider p-1">Exámenes</div>
+                                                                {[1, 2, 3, 4].map(pNum => {
+                                                                    const exam = exams.find(e => e.parcial === pNum);
+                                                                    return (
+                                                                        <button 
+                                                                            key={pNum}
+                                                                            disabled={!exam}
+                                                                            onClick={() => exam && setSelectedNoteId(exam.id)}
+                                                                            className={`w-full text-left p-2 rounded-lg text-[11px] flex items-center justify-between transition-all ${
+                                                                                exam 
+                                                                                ? selectedNoteId === exam.id 
+                                                                                    ? 'bg-rose-500 text-white font-bold' 
+                                                                                    : 'text-slate-600 dark:text-slate-300 hover:bg-white dark:hover:bg-slate-700' 
+                                                                                : 'text-gray-300 dark:text-slate-600 cursor-not-allowed italic opacity-50'
+                                                                            }`}
+                                                                        >
+                                                                            <div className="flex items-center space-x-2 truncate">
+                                                                                <span className={`w-1.5 h-1.5 rounded-full ${exam ? 'bg-rose-400' : 'bg-gray-200 dark:bg-slate-700'}`}></span>
+                                                                                <span className="truncate">Parcial {pNum}</span>
+                                                                            </div>
+                                                                            {!exam ? <Icons.Lock className="w-3 h-3" /> : <span className="text-[8px] font-bold">PDF</span>}
+                                                                        </button>
+                                                                    );
+                                                                })}
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            );
+                                        })
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    </aside>
 
-                                {selectedSubjects.length === 1 && (
-                                    <div className="dep-section">
-                                        <div className="dep-title">ℹ️ Detalles de la Materia</div>
-                                        <div style={{background: "#f7fafc", padding: "12px", borderRadius: "8px", fontSize: "14px"}}>
-                                            <p><strong>Código:</strong> {selectedSubjects[0].code}</p>
-                                            <p><strong>Nombre:</strong> {selectedSubjects[0].name}</p>
-                                            <p><strong>Semestre:</strong> {selectedSubjects[0].semester}</p>
-                                            <p><strong>Tipo:</strong> {typeColors[selectedSubjects[0].type].name}</p>
-                                            <p><strong>Horas Teóricas:</strong> {selectedSubjects[0].theory}</p>
-                                            <p><strong>Horas Prácticas:</strong> {selectedSubjects[0].lab}</p>
-                                            <p><strong>Créditos:</strong> {selectedSubjects[0].credits}</p>
-                                            {selectedSubjects[0].prereqs.length > 0 && (
-                                                <p><strong>Prerrequisitos Directos:</strong> {selectedSubjects[0].prereqs.join(", ")}</p>
-                                            )}
-                                        </div>
-                                    </div>
-                                )}
+                    {/* MAIN VIEW */}
+                    <main className="flex-1 flex flex-col min-w-0 relative">
+                        {/* Mobile Toggle */}
+                        <button 
+                            onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+                            className="md:hidden absolute top-4 left-4 z-50 p-2 bg-indigo-600 text-white rounded-lg shadow-lg"
+                        >
+                            <Icons.Menu className="w-5 h-5" />
+                        </button>
 
-                                {selectedSubjects.length > 1 && (
-                                    <div className="dep-section">
-                                        <div className="dep-title">📊 Resumen de Selección</div>
-                                        <div style={{background: "#f7fafc", padding: "12px", borderRadius: "8px", fontSize: "14px"}}>
-                                            <p><strong>Materias seleccionadas:</strong> {selectedSubjects.length}</p>
-                                            <p><strong>Créditos totales:</strong> {selectedSubjects.reduce((sum, s) => sum + s.credits, 0)}</p>
-                                            <p><strong>Prerrequisitos necesarios:</strong> {prerequisites.length}</p>
-                                            <p><strong>Materias que se desbloquean:</strong> {dependents.length}</p>
-                                        </div>
+                        {activeNoteData ? (
+                            <div className="flex flex-col h-full bg-gray-100 dark:bg-slate-950">
+                                <header className="h-16 bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700 flex items-center justify-between px-6 shrink-0">
+                                    <div className="flex flex-col ml-12 md:ml-0 truncate">
+                                        <span className="text-[10px] uppercase font-bold text-gray-400">
+                                            {activeNoteData.type === 'recurso-general' ? 'Recurso General' : `Semestre ${currentSemester}`}
+                                        </span>
+                                        <h2 className="text-sm font-bold text-slate-800 dark:text-white truncate">{activeNoteData.title}</h2>
                                     </div>
-                                )}
+                                    <div className="flex items-center space-x-3">
+                                        <a href={activeNoteData.pdfUrl} target="_blank" className="px-4 py-2 bg-indigo-600 text-white text-xs font-bold rounded-xl hover:bg-indigo-700 transition-all shadow-md">
+                                            Descargar
+                                        </a>
+                                        <button onClick={() => setSelectedNoteId(null)} className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-white transition-colors">
+                                            <Icons.X className="w-5 h-5" />
+                                        </button>
+                                    </div>
+                                </header>
+                                <div className="flex-1 iframe-container p-4 md:p-8 overflow-hidden">
+                                    <iframe 
+                                        src={activeNoteData.pdfUrl} 
+                                        className="w-full h-full rounded-2xl border-none shadow-2xl bg-white"
+                                        title="Visor"
+                                    />
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="flex-1 flex flex-col items-center justify-center p-12 text-center bg-gray-50 dark:bg-slate-900 transition-all">
+                                <div className="max-w-lg">
+                                    <div className="w-24 h-24 bg-white dark:bg-slate-800 rounded-3xl flex items-center justify-center mb-8 shadow-xl mx-auto rotate-2">
+                                        <Icons.BookOpen className="w-12 h-12 text-indigo-500" />
+                                    </div>
+                                    <h1 className="text-3xl font-black text-slate-800 dark:text-white mb-4">Gestor de Ingeniería</h1>
+                                    <p className="text-slate-500 dark:text-slate-400 leading-relaxed mb-8">
+                                        Selecciona una opción en el menú lateral. Ahora puedes consultar el <b>Plan de Estudios</b> oficial o acceder a la sección de <b>Fórmulas y Recursos</b> para potenciar tu estudio.
+                                    </p>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        {/* BOTÓN ENLACE A PLAN.HTML */}
+                                        <a 
+                                            href="plan.html"
+                                            className="p-5 bg-white dark:bg-slate-800 rounded-2xl border border-gray-100 dark:border-slate-700 shadow-sm hover:shadow-md transition-all text-left block"
+                                        >
+                                            <Icons.GraduationCap className="w-6 h-6 text-indigo-600 mb-2" />
+                                            <span className="text-[10px] text-gray-400 uppercase font-bold block">Acceso Rápido</span>
+                                            <span className="block text-sm font-bold text-slate-700 dark:text-white">Plan de Estudios</span>
+                                        </a>
+                                        
+                                        {/* BOTÓN ENLACE A RECURSOS.HTML */}
+                                        <a 
+                                            href="recursos.html"
+                                            className="p-5 bg-white dark:bg-slate-800 rounded-2xl border border-gray-100 dark:border-slate-700 shadow-sm hover:shadow-md transition-all text-left block"
+                                        >
+                                            <Icons.Sigma className="w-6 h-6 text-rose-500 mb-2" />
+                                            <span className="text-[10px] text-gray-400 uppercase font-bold block">Herramientas</span>
+                                            <span className="block text-sm font-bold text-slate-700 dark:text-white">Fórmulas y Consejos</span>
+                                        </a>
+                                    </div>
+                                </div>
                             </div>
                         )}
-
-                        <div className="legend">
-                            {Object.entries(typeColors).map(([type, info]) => (
-                                <div key={type} className="legend-item">
-                                    <div className="legend-color" style={{background: info.color}}></div>
-                                    <span>{info.name}</span>
-                                </div>
-                            ))}
-                        </div>
-
-                        <div className="legend" style={{marginTop: "12px"}}>
-                            <div className="legend-item">
-                                <div className="legend-color" style={{background: "#f0fff4", border: "2px solid #48bb78"}}></div>
-                                <span>Prerrequisito</span>
-                            </div>
-                            <div className="legend-item">
-                                <div className="legend-color" style={{background: "#fffaf0", border: "2px solid #ed8936"}}></div>
-                                <span>Dependiente</span>
-                            </div>
-                            <div className="legend-item">
-                                <div className="legend-color" style={{background: "white", border: "3px solid #667eea"}}></div>
-                                <span>Seleccionada</span>
-                            </div>
-                        </div>
-                    </div>
+                    </main>
                 </div>
             );
         }
 
-        ReactDOM.render(<App />, document.getElementById('root'));
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
     </script>
 </body>
 </html>
