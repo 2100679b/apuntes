@@ -163,583 +163,25 @@
         ];
 
         // ==========================================
-        //  DOCUMENTOS Y EXÁMENES - TODO DESBLOQUEADO
-        //  TODAS las materias tienen APUNTES + 4 PARCIALES
+        //  RECURSOS GLOBALES
         // ==========================================
-        
-        // ==========================================
-        //  📚 PERSONALIZACIÓN DE PDFS
-        //  Cambia los nombres de los archivos por los tuyos reales
-        //  Todos los PDFs van en la carpeta ./pdfs/
-        // ==========================================
+        const RECURSOS_GENERALES = [
+            { id: 'plan-estudios-global', title: 'Plan de Estudios Completo', pdfUrl: './pdfs/plan_general.pdf', icon: 'GraduationCap' },
+            { id: 'formulas-mate', title: 'Formulario de Matemáticas', pdfUrl: './pdfs/formulas_mate.pdf', icon: 'Sigma' },
+            { id: 'formulas-fisica', title: 'Formulario de Física', pdfUrl: './pdfs/formulas_fisica.pdf', icon: 'Zap' },
+            { id: 'consejos-estudio', title: 'Consejos para Exámenes', pdfUrl: './pdfs/consejos.pdf', icon: 'Lightbulb' },
+            { id: 'ejercicios-resueltos', title: 'Ejercicios Resueltos (Varios)', pdfUrl: './pdfs/ejercicios.pdf', icon: 'CheckCircle' },
+        ];
+
         const CUSTOM_PDFS = {
-            // === SEMESTRE I ===
-            'algebra': {
-                apuntes: 'algebra_apuntes.pdf',
-                p1: 'algebra_p1.pdf',
-                p2: 'algebra_p2.pdf',
-                p3: 'algebra_p3.pdf',
-                p4: 'algebra_p4.pdf',
-            },
-            'calculo1': {
-                apuntes: 'calculo1_apuntes.pdf',
-                p1: 'calculo1_p1.pdf',
-                p2: 'calculo1_p2.pdf',
-                p3: 'calculo1_p3.pdf',
-                p4: 'calculo1_p4.pdf',
-            },
-            'fisica1': {
-                apuntes: 'fisica1_apuntes.pdf',
-                p1: 'fisica1_p1.pdf',
-                p2: 'fisica1_p2.pdf',
-                p3: 'fisica1_p3.pdf',
-                p4: 'fisica1_p4.pdf',
-            },
-            'tecnicas': {
-                apuntes: 'tecnicas_apuntes.pdf',
-                p1: 'tecnicas_p1.pdf',
-                p2: 'tecnicas_p2.pdf',
-                p3: 'tecnicas_p3.pdf',
-                p4: 'tecnicas_p4.pdf',
-            },
-            'quimica': {
-                apuntes: 'quimica_apuntes.pdf',
-                p1: 'quimica_p1.pdf',
-                p2: 'quimica_p2.pdf',
-                p3: 'quimica_p3.pdf',
-                p4: 'quimica_p4.pdf',
-            },
-            'ingles1': {
-                apuntes: 'ingles1_apuntes.pdf',
-                p1: 'ingles1_p1.pdf',
-                p2: 'ingles1_p2.pdf',
-                p3: 'ingles1_p3.pdf',
-                p4: 'ingles1_p4.pdf',
-            },
-            'lab-fisica1': {
-                apuntes: 'lab_fisica1_apuntes.pdf',
-                p1: 'lab_fisica1_p1.pdf',
-                p2: 'lab_fisica1_p2.pdf',
-                p3: 'lab_fisica1_p3.pdf',
-                p4: 'lab_fisica1_p4.pdf',
-            },
-            'lab-herra': {
-                apuntes: 'lab_herra_apuntes.pdf',
-                p1: 'lab_herra_p1.pdf',
-                p2: 'lab_herra_p2.pdf',
-                p3: 'lab_herra_p3.pdf',
-                p4: 'lab_herra_p4.pdf',
-            },
-            'lab-quimica': {
-                apuntes: 'lab_quimica_apuntes.pdf',
-                p1: 'lab_quimica_p1.pdf',
-                p2: 'lab_quimica_p2.pdf',
-                p3: 'lab_quimica_p3.pdf',
-                p4: 'lab_quimica_p4.pdf',
-            },
-            
-            // === SEMESTRE II ===
-            'calculo2': {
-                apuntes: 'calculo2_apuntes.pdf',
-                p1: 'calculo2_p1.pdf',
-                p2: 'calculo2_p2.pdf',
-                p3: 'calculo2_p3.pdf',
-                p4: 'calculo2_p4.pdf',
-            },
-            'fisica2': {
-                apuntes: 'fisica2_apuntes.pdf',
-                p1: 'fisica2_p1.pdf',
-                p2: 'fisica2_p2.pdf',
-                p3: 'fisica2_p3.pdf',
-                p4: 'fisica2_p4.pdf',
-            },
-            'progra': {
-                apuntes: 'progra_apuntes.pdf',
-                p1: 'progra_p1.pdf',
-                p2: 'progra_p2.pdf',
-                p3: 'progra_p3.pdf',
-                p4: 'progra_p4.pdf',
-            },
-            'electronica1': {
-                apuntes: 'electronica1_apuntes.pdf',
-                p1: 'electronica1_p1.pdf',
-                p2: 'electronica1_p2.pdf',
-                p3: 'electronica1_p3.pdf',
-                p4: 'electronica1_p4.pdf',
-            },
-            'logica': {
-                apuntes: 'logica_apuntes.pdf',
-                p1: 'logica_p1.pdf',
-                p2: 'logica_p2.pdf',
-                p3: 'logica_p3.pdf',
-                p4: 'logica_p4.pdf',
-            },
-            'ingles2': {
-                apuntes: 'ingles2_apuntes.pdf',
-                p1: 'ingles2_p1.pdf',
-                p2: 'ingles2_p2.pdf',
-                p3: 'ingles2_p3.pdf',
-                p4: 'ingles2_p4.pdf',
-            },
-            'lab-fisica2': {
-                apuntes: 'lab_fisica2_apuntes.pdf',
-                p1: 'lab_fisica2_p1.pdf',
-                p2: 'lab_fisica2_p2.pdf',
-                p3: 'lab_fisica2_p3.pdf',
-                p4: 'lab_fisica2_p4.pdf',
-            },
-            'lab-progra': {
-                apuntes: 'lab_progra_apuntes.pdf',
-                p1: 'lab_progra_p1.pdf',
-                p2: 'lab_progra_p2.pdf',
-                p3: 'lab_progra_p3.pdf',
-                p4: 'lab_progra_p4.pdf',
-            },
-            'lab-electronica1': {
-                apuntes: 'lab_electronica1_apuntes.pdf',
-                p1: 'lab_electronica1_p1.pdf',
-                p2: 'lab_electronica1_p2.pdf',
-                p3: 'lab_electronica1_p3.pdf',
-                p4: 'lab_electronica1_p4.pdf',
-            },
-            
-            // === SEMESTRE III ===
-            'calculo3': {
-                apuntes: 'calculo3_apuntes.pdf',
-                p1: 'calculo3_p1.pdf',
-                p2: 'calculo3_p2.pdf',
-                p3: 'calculo3_p3.pdf',
-                p4: 'calculo3_p4.pdf',
-            },
-            'teoria-electro': {
-                apuntes: 'teoria_electro_apuntes.pdf',
-                p1: 'teoria_electro_p1.pdf',
-                p2: 'teoria_electro_p2.pdf',
-                p3: 'teoria_electro_p3.pdf',
-                p4: 'teoria_electro_p4.pdf',
-            },
-            'metodos': {
-                apuntes: 'metodos_apuntes.pdf',
-                p1: 'metodos_p1.pdf',
-                p2: 'metodos_p2.pdf',
-                p3: 'metodos_p3.pdf',
-                p4: 'metodos_p4.pdf',
-            },
-            'electronica2': {
-                apuntes: 'electronica2_apuntes.pdf',
-                p1: 'electronica2_p1.pdf',
-                p2: 'electronica2_p2.pdf',
-                p3: 'electronica2_p3.pdf',
-                p4: 'electronica2_p4.pdf',
-            },
-            'termo': {
-                apuntes: 'termo_apuntes.pdf',
-                p1: 'termo_p1.pdf',
-                p2: 'termo_p2.pdf',
-                p3: 'termo_p3.pdf',
-                p4: 'termo_p4.pdf',
-            },
-            'ingles3': {
-                apuntes: 'ingles3_apuntes.pdf',
-                p1: 'ingles3_p1.pdf',
-                p2: 'ingles3_p2.pdf',
-                p3: 'ingles3_p3.pdf',
-                p4: 'ingles3_p4.pdf',
-            },
-            'lab-teoria': {
-                apuntes: 'lab_teoria_apuntes.pdf',
-                p1: 'lab_teoria_p1.pdf',
-                p2: 'lab_teoria_p2.pdf',
-                p3: 'lab_teoria_p3.pdf',
-                p4: 'lab_teoria_p4.pdf',
-            },
-            'lab-electronica2': {
-                apuntes: 'lab_electronica2_apuntes.pdf',
-                p1: 'lab_electronica2_p1.pdf',
-                p2: 'lab_electronica2_p2.pdf',
-                p3: 'lab_electronica2_p3.pdf',
-                p4: 'lab_electronica2_p4.pdf',
-            },
-            'lab-termo': {
-                apuntes: 'lab_termo_apuntes.pdf',
-                p1: 'lab_termo_p1.pdf',
-                p2: 'lab_termo_p2.pdf',
-                p3: 'lab_termo_p3.pdf',
-                p4: 'lab_termo_p4.pdf',
-            },
-            
-            // === SEMESTRE IV ===
-            'calculo4': {
-                apuntes: 'calculo4_apuntes.pdf',
-                p1: 'calculo4_p1.pdf',
-                p2: 'calculo4_p2.pdf',
-                p3: 'calculo4_p3.pdf',
-                p4: 'calculo4_p4.pdf',
-            },
-            'circuitos1': {
-                apuntes: 'circuitos1_apuntes.pdf',
-                p1: 'circuitos1_p1.pdf',
-                p2: 'circuitos1_p2.pdf',
-                p3: 'circuitos1_p3.pdf',
-                p4: 'circuitos1_p4.pdf',
-            },
-            'discretas': {
-                apuntes: 'discretas_apuntes.pdf',
-                p1: 'discretas_p1.pdf',
-                p2: 'discretas_p2.pdf',
-                p3: 'discretas_p3.pdf',
-                p4: 'discretas_p4.pdf',
-            },
-            'digital1': {
-                apuntes: 'digital1_apuntes.pdf',
-                p1: 'digital1_p1.pdf',
-                p2: 'digital1_p2.pdf',
-                p3: 'digital1_p3.pdf',
-                p4: 'digital1_p4.pdf',
-            },
-            'estructuras': {
-                apuntes: '9788448140779.pdf',  // ✅ Tu PDF personalizado
-                p1: 'estructuras_p1.pdf',
-                p2: 'estructuras_p2.pdf',
-                p3: 'estructuras_p3.pdf',
-                p4: 'estructuras_p4.pdf',
-            },
-            'ing-prog': {
-                apuntes: 'ing_prog_apuntes.pdf',
-                p1: 'ing_prog_p1.pdf',
-                p2: 'ing_prog_p2.pdf',
-                p3: 'ing_prog_p3.pdf',
-                p4: 'ing_prog_p4.pdf',
-            },
-            'ingles4': {
-                apuntes: 'ingles4_apuntes.pdf',
-                p1: 'ingles4_p1.pdf',
-                p2: 'ingles4_p2.pdf',
-                p3: 'ingles4_p3.pdf',
-                p4: 'ingles4_p4.pdf',
-            },
-            'lab-digital1': {
-                apuntes: 'lab_digital1_apuntes.pdf',
-                p1: 'lab_digital1_p1.pdf',
-                p2: 'lab_digital1_p2.pdf',
-                p3: 'lab_digital1_p3.pdf',
-                p4: 'lab_digital1_p4.pdf',
-            },
-            
-            // === SEMESTRE V ===
-            'lineal': {
-                apuntes: 'lineal_apuntes.pdf',
-                p1: 'lineal_p1.pdf',
-                p2: 'lineal_p2.pdf',
-                p3: 'lineal_p3.pdf',
-                p4: 'lineal_p4.pdf',
-            },
-            'algoritmos': {
-                apuntes: 'algoritmos_apuntes.pdf',
-                p1: 'algoritmos_p1.pdf',
-                p2: 'algoritmos_p2.pdf',
-                p3: 'algoritmos_p3.pdf',
-                p4: 'algoritmos_p4.pdf',
-            },
-            'paradigmas': {
-                apuntes: 'paradigmas_apuntes.pdf',
-                p1: 'paradigmas_p1.pdf',
-                p2: 'paradigmas_p2.pdf',
-                p3: 'paradigmas_p3.pdf',
-                p4: 'paradigmas_p4.pdf',
-            },
-            'proba': {
-                apuntes: 'proba_apuntes.pdf',
-                p1: 'proba_p1.pdf',
-                p2: 'proba_p2.pdf',
-                p3: 'proba_p3.pdf',
-                p4: 'proba_p4.pdf',
-            },
-            'control1': {
-                apuntes: 'control1_apuntes.pdf',
-                p1: 'control1_p1.pdf',
-                p2: 'control1_p2.pdf',
-                p3: 'control1_p3.pdf',
-                p4: 'control1_p4.pdf',
-            },
-            'lenguajes': {
-                apuntes: 'notas_lfya.pdf',
-                p1: 'lenguajes_p1.pdf',
-                p2: 'lenguajes_p2.pdf',
-                p3: 'lenguajes_p3.pdf',
-                p4: 'lenguajes_p4.pdf',
-            },
-            'lab-paradigmas': {
-                apuntes: 'lab_paradigmas_apuntes.pdf',
-                p1: 'lab_paradigmas_p1.pdf',
-                p2: 'lab_paradigmas_p2.pdf',
-                p3: 'lab_paradigmas_p3.pdf',
-                p4: 'lab_paradigmas_p4.pdf',
-            },
-            'lab-control1': {
-                apuntes: 'lab_control1_apuntes.pdf',
-                p1: 'lab_control1_p1.pdf',
-                p2: 'lab_control1_p2.pdf',
-                p3: 'lab_control1_p3.pdf',
-                p4: 'lab_control1_p4.pdf',
-            },
-            
-            // === SEMESTRE VI ===
-            'graficacion': {
-                apuntes: 'graficacion_apuntes.pdf',
-                p1: 'graficacion_p1.pdf',
-                p2: 'graficacion_p2.pdf',
-                p3: 'graficacion_p3.pdf',
-                p4: 'graficacion_p4.pdf',
-            },
-            'org-comp': {
-                apuntes: 'org_comp_apuntes.pdf',
-                p1: 'org_comp_p1.pdf',
-                p2: 'org_comp_p2.pdf',
-                p3: 'org_comp_p3.pdf',
-                p4: 'org_comp_p4.pdf',
-            },
-            'compiladores': {
-                apuntes: 'compiladores_apuntes.pdf',
-                p1: 'compiladores_p1.pdf',
-                p2: 'compiladores_p2.pdf',
-                p3: 'compiladores_p3.pdf',
-                p4: 'compiladores_p4.pdf',
-            },
-            'control2': {
-                apuntes: 'control2_apuntes.pdf',
-                p1: 'control2_p1.pdf',
-                p2: 'control2_p2.pdf',
-                p3: 'control2_p3.pdf',
-                p4: 'control2_p4.pdf',
-            },
-            'comms1': {
-                apuntes: 'comms1_apuntes.pdf',
-                p1: 'comms1_p1.pdf',
-                p2: 'comms1_p2.pdf',
-                p3: 'comms1_p3.pdf',
-                p4: 'comms1_p4.pdf',
-            },
-            'economia': {
-                apuntes: 'economia_apuntes.pdf',
-                p1: 'economia_p1.pdf',
-                p2: 'economia_p2.pdf',
-                p3: 'economia_p3.pdf',
-                p4: 'economia_p4.pdf',
-            },
-            'lab-control2': {
-                apuntes: 'lab_control2_apuntes.pdf',
-                p1: 'lab_control2_p1.pdf',
-                p2: 'lab_control2_p2.pdf',
-                p3: 'lab_control2_p3.pdf',
-                p4: 'lab_control2_p4.pdf',
-            },
-            'lab-comms': {
-                apuntes: 'lab_comms_apuntes.pdf',
-                p1: 'lab_comms_p1.pdf',
-                p2: 'lab_comms_p2.pdf',
-                p3: 'lab_comms_p3.pdf',
-                p4: 'lab_comms_p4.pdf',
-            },
-            'lab-graf': {
-                apuntes: 'lab_graf_apuntes.pdf',
-                p1: 'lab_graf_p1.pdf',
-                p2: 'lab_graf_p2.pdf',
-                p3: 'lab_graf_p3.pdf',
-                p4: 'lab_graf_p4.pdf',
-            },
-            
-            // === SEMESTRE VII ===
-            'teoria-comp': {
-                apuntes: 'teoria_comp_apuntes.pdf',
-                p1: 'teoria_comp_p1.pdf',
-                p2: 'teoria_comp_p2.pdf',
-                p3: 'teoria_comp_p3.pdf',
-                p4: 'teoria_comp_p4.pdf',
-            },
-            'inv-op': {
-                apuntes: 'inv_op_apuntes.pdf',
-                p1: 'inv_op_p1.pdf',
-                p2: 'inv_op_p2.pdf',
-                p3: 'inv_op_p3.pdf',
-                p4: 'inv_op_p4.pdf',
-            },
-            'bd': {
-                apuntes: 'bd_apuntes.pdf',
-                p1: 'bd_p1.pdf',
-                p2: 'bd_p2.pdf',
-                p3: 'bd_p3.pdf',
-                p4: 'bd_p4.pdf',
-            },
-            'redes': {
-                apuntes: 'redes_apuntes.pdf',
-                p1: 'redes_p1.pdf',
-                p2: 'redes_p2.pdf',
-                p3: 'redes_p3.pdf',
-                p4: 'redes_p4.pdf',
-            },
-            'temas7': {
-                apuntes: 'temas7_apuntes.pdf',
-                p1: 'temas7_p1.pdf',
-                p2: 'temas7_p2.pdf',
-                p3: 'temas7_p3.pdf',
-                p4: 'temas7_p4.pdf',
-            },
-            'lab-redes': {
-                apuntes: 'lab_redes_apuntes.pdf',
-                p1: 'lab_redes_p1.pdf',
-                p2: 'lab_redes_p2.pdf',
-                p3: 'lab_redes_p3.pdf',
-                p4: 'lab_redes_p4.pdf',
-            },
-            'lab-bd': {
-                apuntes: 'lab_bd_apuntes.pdf',
-                p1: 'lab_bd_p1.pdf',
-                p2: 'lab_bd_p2.pdf',
-                p3: 'lab_bd_p3.pdf',
-                p4: 'lab_bd_p4.pdf',
-            },
-            
-            // === SEMESTRE VIII ===
-            'modelos': {
-                apuntes: 'modelos_apuntes.pdf',
-                p1: 'modelos_p1.pdf',
-                p2: 'modelos_p2.pdf',
-                p3: 'modelos_p3.pdf',
-                p4: 'modelos_p4.pdf',
-            },
-            'control-dig1': {
-                apuntes: 'control_dig1_apuntes.pdf',
-                p1: 'control_dig1_p1.pdf',
-                p2: 'control_dig1_p2.pdf',
-                p3: 'control_dig1_p3.pdf',
-                p4: 'control_dig1_p4.pdf',
-            },
-            'so': {
-                apuntes: 'so_apuntes.pdf',
-                p1: 'so_p1.pdf',
-                p2: 'so_p2.pdf',
-                p3: 'so_p3.pdf',
-                p4: 'so_p4.pdf',
-            },
-            'admin': {
-                apuntes: 'admin_apuntes.pdf',
-                p1: 'admin_p1.pdf',
-                p2: 'admin_p2.pdf',
-                p3: 'admin_p3.pdf',
-                p4: 'admin_p4.pdf',
-            },
-            'etica': {
-                apuntes: 'etica_apuntes.pdf',
-                p1: 'etica_p1.pdf',
-                p2: 'etica_p2.pdf',
-                p3: 'etica_p3.pdf',
-                p4: 'etica_p4.pdf',
-            },
-            'temas8': {
-                apuntes: 'temas8_apuntes.pdf',
-                p1: 'temas8_p1.pdf',
-                p2: 'temas8_p2.pdf',
-                p3: 'temas8_p3.pdf',
-                p4: 'temas8_p4.pdf',
-            },
-            'lab-control-dig1': {
-                apuntes: 'lab_control_dig1_apuntes.pdf',
-                p1: 'lab_control_dig1_p1.pdf',
-                p2: 'lab_control_dig1_p2.pdf',
-                p3: 'lab_control_dig1_p3.pdf',
-                p4: 'lab_control_dig1_p4.pdf',
-            },
-            'lab-so': {
-                apuntes: 'lab_so_apuntes.pdf',
-                p1: 'lab_so_p1.pdf',
-                p2: 'lab_so_p2.pdf',
-                p3: 'lab_so_p3.pdf',
-                p4: 'lab_so_p4.pdf',
-            },
-            'lab-temas8': {
-                apuntes: 'lab_temas8_apuntes.pdf',
-                p1: 'lab_temas8_p1.pdf',
-                p2: 'lab_temas8_p2.pdf',
-                p3: 'lab_temas8_p3.pdf',
-                p4: 'lab_temas8_p4.pdf',
-            },
-            
-            // === SEMESTRE IX ===
-            'expresion': {
-                apuntes: 'expresion_apuntes.pdf',
-                p1: 'expresion_p1.pdf',
-                p2: 'expresion_p2.pdf',
-                p3: 'expresion_p3.pdf',
-                p4: 'expresion_p4.pdf',
-            },
-            'contabilidad': {
-                apuntes: 'contabilidad_apuntes.pdf',
-                p1: 'contabilidad_p1.pdf',
-                p2: 'contabilidad_p2.pdf',
-                p3: 'contabilidad_p3.pdf',
-                p4: 'contabilidad_p4.pdf',
-            },
-            'temas9-1': {
-                apuntes: 'temas9_1_apuntes.pdf',
-                p1: 'temas9_1_p1.pdf',
-                p2: 'temas9_1_p2.pdf',
-                p3: 'temas9_1_p3.pdf',
-                p4: 'temas9_1_p4.pdf',
-            },
-            'temas9-2': {
-                apuntes: 'temas9_2_apuntes.pdf',
-                p1: 'temas9_2_p1.pdf',
-                p2: 'temas9_2_p2.pdf',
-                p3: 'temas9_2_p3.pdf',
-                p4: 'temas9_2_p4.pdf',
-            },
-            'temas9-3': {
-                apuntes: 'temas9_3_apuntes.pdf',
-                p1: 'temas9_3_p1.pdf',
-                p2: 'temas9_3_p2.pdf',
-                p3: 'temas9_3_p3.pdf',
-                p4: 'temas9_3_p4.pdf',
-            },
-            'lab-temas9': {
-                apuntes: 'lab_temas9_apuntes.pdf',
-                p1: 'lab_temas9_p1.pdf',
-                p2: 'lab_temas9_p2.pdf',
-                p3: 'lab_temas9_p3.pdf',
-                p4: 'lab_temas9_p4.pdf',
-            },
-            'ia': {
-                apuntes: 'ia_apuntes.pdf',
-                p1: 'ia_p1.pdf',
-                p2: 'ia_p2.pdf',
-                p3: 'ia_p3.pdf',
-                p4: 'ia_p4.pdf',
-            },
-            'lab-ia': {
-                apuntes: 'lab_ia_apuntes.pdf',
-                p1: 'lab_ia_p1.pdf',
-                p2: 'lab_ia_p2.pdf',
-                p3: 'lab_ia_p3.pdf',
-                p4: 'lab_ia_p4.pdf',
-            },
-            
-            // === SEMESTRE X ===
-            'tesis': {
-                apuntes: 'tesis_apuntes.pdf',
-                p1: 'tesis_p1.pdf',
-                p2: 'tesis_p2.pdf',
-                p3: 'tesis_p3.pdf',
-                p4: 'tesis_p4.pdf',
-            },
+            // Se asume que estos archivos existen en la carpeta ./pdfs/
+            // Si no existen, el iframe mostrará error o página en blanco
         };
         
-        // Generar automáticamente apuntes y 4 parciales para TODAS las materias
         const MIS_DOCUMENTOS = [];
         
         PLAN_ESTUDIOS.forEach(subject => {
             const customPdf = CUSTOM_PDFS[subject.id] || {};
-            
-            // Agregar apuntes
             MIS_DOCUMENTOS.push({
                 id: `doc-${subject.id}`,
                 subjectId: subject.id,
@@ -748,7 +190,6 @@
                 type: 'apuntes'
             });
             
-            // Agregar 4 parciales para cada materia
             for (let i = 1; i <= 4; i++) {
                 MIS_DOCUMENTOS.push({
                     id: `ex-${subject.id}-p${i}`,
@@ -761,6 +202,16 @@
             }
         });
 
+        // Añadir los recursos generales a la lista de documentos para que el visor los reconozca
+        RECURSOS_GENERALES.forEach(res => {
+            MIS_DOCUMENTOS.push({
+                id: res.id,
+                title: res.title,
+                pdfUrl: res.pdfUrl,
+                type: 'recurso-general'
+            });
+        });
+
         // --- Iconos ---
         const Icon = ({ path, className }) => (
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
@@ -769,9 +220,9 @@
         );
 
         const Icons = {
-            Rocket: (props) => <Icon {...props} path={<><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/><path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"/><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"/><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"/></>} />,
+            Rocket: (props) => <Icon {...props} path={<><path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"/><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"/><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"/><path d="m2 22 3-3"/><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/></>} />,
             Search: (props) => <Icon {...props} path={<><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></>} />,
-            FileText: (props) => <Icon {...props} path={<><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><line x1="16" x2="8" y1="13" y2="13"/><line x1="16" x2="8" y1="17" y2="17"/><line x1="10" x2="8" y1="9" y2="9"/></>} />,
+            FileText: (props) => <Icon {...props} path={<><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><line x1="16" x2="8" y1="13" y2="13"/><line x1="16" x2="8" y1="17" y2="17"/></>} />,
             Menu: (props) => <Icon {...props} path={<><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/></>} />,
             Moon: (props) => <Icon {...props} path={<><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></>} />,
             Sun: (props) => <Icon {...props} path={<><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/></>} />,
@@ -780,6 +231,12 @@
             Lock: (props) => <Icon {...props} path={<><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></>} />,
             X: (props) => <Icon {...props} path={<><path d="M18 6 6 18"/><path d="m6 6 12 12"/></>} />,
             BookOpen: (props) => <Icon {...props} path={<><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></>} />,
+            GraduationCap: (props) => <Icon {...props} path={<><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></>} />,
+            Sigma: (props) => <Icon {...props} path={<><path d="M18 7V4H6l10 8-10 8h12v-3"/></>} />,
+            Zap: (props) => <Icon {...props} path={<><path d="M13 2 L3 14h9l-1 8 10-12h-9l1-8z"/></>} />,
+            Lightbulb: (props) => <Icon {...props} path={<><path d="M15 14c.2 0 .3.1.3.3l.4 2.7c0 .3-.2.5-.5.5H8.8c-.3 0-.5-.2-.5-.5l.4-2.7c0-.2.1-.3.3-.3h6z"/><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-7 7c0 2.3 1 4.3 2.7 5.7h8.6C18 13.3 19 11.3 19 9a7 7 0 0 0-7-7z"/></>} />,
+            CheckCircle: (props) => <Icon {...props} path={<><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></>} />,
+            LayoutGrid: (props) => <Icon {...props} path={<><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></>} />,
         };
 
         const SUBJECT_COLORS = [
@@ -800,6 +257,7 @@
             const [searchTerm, setSearchTerm] = useState('');
             const [darkMode, setDarkMode] = useState(() => localStorage.getItem('theme') === 'dark');
             const [expandedSubjects, setExpandedSubjects] = useState({});
+            const [activeTab, setActiveTab] = useState('materias'); // 'materias' | 'plan' | 'recursos'
 
             useEffect(() => {
                 document.documentElement.classList.toggle('dark', darkMode);
@@ -831,116 +289,202 @@
                                 <div className="flex items-center justify-between mb-6">
                                     <div className="flex items-center space-x-2 text-indigo-600 dark:text-indigo-400 font-bold text-xl">
                                         <Icons.Rocket className="w-6 h-6" />
-                                        <span>Plan de Estudio</span>
+                                        <span>Ingeniería 2.0</span>
                                     </div>
-                                    <button onClick={() => setDarkMode(!darkMode)} className="p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-slate-700">
+                                    <button onClick={() => setDarkMode(!darkMode)} className="p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-slate-700 transition-colors">
                                         {darkMode ? <Icons.Sun className="w-5 h-5" /> : <Icons.Moon className="w-5 h-5" />}
                                     </button>
                                 </div>
 
-                                <div className="semester-scroll flex space-x-1 overflow-x-auto mb-4 bg-gray-200 dark:bg-slate-800 p-1 rounded-xl" style={{scrollbarWidth: 'thin'}}>
-                                    {SEMESTERS.map(sem => (
-                                        <button 
-                                            key={sem}
-                                            onClick={() => setCurrentSemester(sem)}
-                                            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex-shrink-0 ${currentSemester === sem ? 'bg-white dark:bg-slate-600 text-indigo-600 dark:text-white shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'}`}
-                                        >
-                                            {sem}
-                                        </button>
-                                    ))}
+                                {/* NAVEGACIÓN PRINCIPAL (LOS BOTONES SOLICITADOS) */}
+                                <div className="grid grid-cols-3 gap-1 mb-6 bg-gray-200 dark:bg-slate-800 p-1 rounded-xl">
+                                    <button 
+                                        onClick={() => setActiveTab('materias')}
+                                        className={`flex flex-col items-center justify-center py-2 px-1 rounded-lg transition-all ${activeTab === 'materias' ? 'bg-white dark:bg-slate-700 shadow-sm text-indigo-600 dark:text-white' : 'text-gray-500 hover:bg-gray-100 dark:hover:bg-slate-700/50'}`}
+                                    >
+                                        <Icons.LayoutGrid className="w-4 h-4 mb-1" />
+                                        <span className="text-[9px] font-bold uppercase">Materias</span>
+                                    </button>
+                                    <button 
+                                        onClick={() => {
+                                            setActiveTab('plan');
+                                            setSelectedNoteId('plan-estudios-global');
+                                        }}
+                                        className={`flex flex-col items-center justify-center py-2 px-1 rounded-lg transition-all ${activeTab === 'plan' ? 'bg-white dark:bg-slate-700 shadow-sm text-indigo-600 dark:text-white' : 'text-gray-500 hover:bg-gray-100 dark:hover:bg-slate-700/50'}`}
+                                    >
+                                        <Icons.GraduationCap className="w-4 h-4 mb-1" />
+                                        <span className="text-[9px] font-bold uppercase">Mi Plan</span>
+                                    </button>
+                                    <button 
+                                        onClick={() => setActiveTab('recursos')}
+                                        className={`flex flex-col items-center justify-center py-2 px-1 rounded-lg transition-all ${activeTab === 'recursos' ? 'bg-white dark:bg-slate-700 shadow-sm text-indigo-600 dark:text-white' : 'text-gray-500 hover:bg-gray-100 dark:hover:bg-slate-700/50'}`}
+                                    >
+                                        <Icons.Sigma className="w-4 h-4 mb-1" />
+                                        <span className="text-[9px] font-bold uppercase">Recursos</span>
+                                    </button>
                                 </div>
 
-                                <div className="relative">
-                                    <Icons.Search className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
-                                    <input 
-                                        type="text" 
-                                        placeholder="Filtrar materia..."
-                                        className="w-full pl-9 pr-4 py-2 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl text-sm outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
-                                        value={searchTerm}
-                                        onChange={(e) => setSearchTerm(e.target.value)}
-                                    />
-                                </div>
+                                {activeTab === 'materias' && (
+                                    <div className="fade-in">
+                                        <div className="semester-scroll flex space-x-1 overflow-x-auto mb-4 bg-gray-200 dark:bg-slate-800 p-1 rounded-xl" style={{scrollbarWidth: 'thin'}}>
+                                            {SEMESTERS.map(sem => (
+                                                <button 
+                                                    key={sem}
+                                                    onClick={() => setCurrentSemester(sem)}
+                                                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex-shrink-0 ${currentSemester === sem ? 'bg-white dark:bg-slate-600 text-indigo-600 dark:text-white shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'}`}
+                                                >
+                                                    {sem}
+                                                </button>
+                                            ))}
+                                        </div>
+
+                                        <div className="relative">
+                                            <Icons.Search className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
+                                            <input 
+                                                type="text" 
+                                                placeholder="Filtrar materia..."
+                                                className="w-full pl-9 pr-4 py-2 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl text-sm outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
+                                                value={searchTerm}
+                                                onChange={(e) => setSearchTerm(e.target.value)}
+                                            />
+                                        </div>
+                                    </div>
+                                )}
                             </div>
 
-                            {/* LISTA DE MATERIAS CON 4 PARCIALES C/U */}
+                            {/* CONTENIDO DINÁMICO SEGÚN PESTAÑA */}
                             <div className="flex-1 overflow-y-auto p-4 space-y-2 custom-scrollbar">
-                                <h3 className="px-2 text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">Materias del Semestre {currentSemester}</h3>
-                                {visibleSubjects.length === 0 ? (
-                                    <p className="text-center text-xs text-gray-400 py-10 italic">No hay resultados.</p>
-                                ) : (
-                                    visibleSubjects.map(subject => {
-                                        const isExp = expandedSubjects[subject.id];
-                                        const subjectDocs = MIS_DOCUMENTOS.filter(d => d.subjectId === subject.id);
-                                        const notes = subjectDocs.filter(d => d.type === 'apuntes');
-                                        const exams = subjectDocs.filter(d => d.type === 'examen');
+                                {activeTab === 'materias' && (
+                                    <div className="fade-in space-y-2">
+                                        <h3 className="px-2 text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">Materias - Semestre {currentSemester}</h3>
+                                        {visibleSubjects.length === 0 ? (
+                                            <p className="text-center text-xs text-gray-400 py-10 italic">No hay resultados.</p>
+                                        ) : (
+                                            visibleSubjects.map(subject => {
+                                                const isExp = expandedSubjects[subject.id];
+                                                const subjectDocs = MIS_DOCUMENTOS.filter(d => d.subjectId === subject.id);
+                                                const notes = subjectDocs.filter(d => d.type === 'apuntes');
+                                                const exams = subjectDocs.filter(d => d.type === 'examen');
 
-                                        return (
-                                            <div key={subject.id} className="group">
+                                                return (
+                                                    <div key={subject.id} className="group">
+                                                        <button 
+                                                            onClick={() => toggleExpand(subject.id)}
+                                                            className={`w-full flex items-center justify-between p-3 rounded-xl transition-all ${isExp ? 'bg-indigo-50 dark:bg-indigo-900/20' : 'hover:bg-gray-100 dark:hover:bg-slate-800'}`}
+                                                        >
+                                                            <div className="flex items-center space-x-3 overflow-hidden">
+                                                                <div className={`w-2 h-2 rounded-full flex-shrink-0 ${subject.color.bg.split(' ')[0]}`}></div>
+                                                                <span className={`text-sm font-medium truncate ${isExp ? 'text-indigo-700 dark:text-indigo-300' : 'text-slate-600 dark:text-slate-400'}`}>
+                                                                    {subject.name}
+                                                                </span>
+                                                            </div>
+                                                            {isExp ? <Icons.ChevronDown className="w-4 h-4 opacity-50" /> : <Icons.ChevronRight className="w-4 h-4 opacity-50" />}
+                                                        </button>
+
+                                                        {isExp && (
+                                                            <div className="ml-4 mt-1 space-y-1 border-l-2 border-indigo-100 dark:border-indigo-900/30 pl-3 fade-in">
+                                                                <div>
+                                                                    <div className="text-[9px] font-bold text-gray-400 uppercase tracking-wider p-1">Documentos</div>
+                                                                    {notes.map(note => (
+                                                                        <button 
+                                                                            key={note.id}
+                                                                            onClick={() => setSelectedNoteId(note.id)}
+                                                                            className={`w-full text-left p-2 rounded-lg text-xs flex items-center space-x-2 transition-colors ${selectedNoteId === note.id ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-500 dark:text-slate-400 hover:bg-white dark:hover:bg-slate-700'}`}
+                                                                        >
+                                                                            <Icons.FileText className="w-3.5 h-3.5 shrink-0" />
+                                                                            <span className="truncate">{note.title}</span>
+                                                                        </button>
+                                                                    ))}
+                                                                </div>
+                                                                <div className="mt-2">
+                                                                    <div className="text-[9px] font-bold text-gray-400 uppercase tracking-wider p-1">Exámenes</div>
+                                                                    {[1, 2, 3, 4].map(pNum => {
+                                                                        const exam = exams.find(e => e.parcial === pNum);
+                                                                        return (
+                                                                            <button 
+                                                                                key={pNum}
+                                                                                disabled={!exam}
+                                                                                onClick={() => exam && setSelectedNoteId(exam.id)}
+                                                                                className={`w-full text-left p-2 rounded-lg text-[11px] flex items-center justify-between transition-all ${
+                                                                                    exam 
+                                                                                    ? selectedNoteId === exam.id 
+                                                                                        ? 'bg-rose-500 text-white font-bold' 
+                                                                                        : 'text-slate-600 dark:text-slate-300 hover:bg-white dark:hover:bg-slate-700' 
+                                                                                    : 'text-gray-300 dark:text-slate-600 cursor-not-allowed italic opacity-50'
+                                                                                }`}
+                                                                            >
+                                                                                <div className="flex items-center space-x-2 truncate">
+                                                                                    <span className={`w-1.5 h-1.5 rounded-full ${exam ? 'bg-rose-400' : 'bg-gray-200 dark:bg-slate-700'}`}></span>
+                                                                                    <span className="truncate">Parcial {pNum}</span>
+                                                                                </div>
+                                                                                {!exam ? <Icons.Lock className="w-3 h-3" /> : <span className="text-[8px] font-bold">PDF</span>}
+                                                                            </button>
+                                                                        );
+                                                                    })}
+                                                                </div>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                );
+                                            })
+                                        )}
+                                    </div>
+                                )}
+
+                                {activeTab === 'plan' && (
+                                    <div className="fade-in p-2">
+                                        <h3 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-4">Plan de Estudios</h3>
+                                        <div className="space-y-3">
+                                            {RECURSOS_GENERALES.filter(r => r.id.includes('plan')).map(res => (
                                                 <button 
-                                                    onClick={() => toggleExpand(subject.id)}
-                                                    className={`w-full flex items-center justify-between p-3 rounded-xl transition-all ${isExp ? 'bg-indigo-50 dark:bg-indigo-900/20' : 'hover:bg-gray-100 dark:hover:bg-slate-800'}`}
+                                                    key={res.id}
+                                                    onClick={() => setSelectedNoteId(res.id)}
+                                                    className={`w-full text-left p-4 rounded-2xl flex items-center space-x-4 transition-all ${selectedNoteId === res.id ? 'bg-indigo-600 text-white shadow-lg' : 'bg-white dark:bg-slate-800 border border-gray-100 dark:border-slate-700 hover:border-indigo-300 dark:hover:border-indigo-700'}`}
                                                 >
-                                                    <div className="flex items-center space-x-3 overflow-hidden">
-                                                        <div className={`w-2 h-2 rounded-full flex-shrink-0 ${subject.color.bg.split(' ')[0]}`}></div>
-                                                        <span className={`text-sm font-medium truncate ${isExp ? 'text-indigo-700 dark:text-indigo-300' : 'text-slate-600 dark:text-slate-400'}`}>
-                                                            {subject.name}
-                                                        </span>
+                                                    <div className={`p-2 rounded-xl ${selectedNoteId === res.id ? 'bg-indigo-500 text-white' : 'bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400'}`}>
+                                                        <Icons.GraduationCap className="w-6 h-6" />
                                                     </div>
-                                                    {isExp ? <Icons.ChevronDown className="w-4 h-4 opacity-50" /> : <Icons.ChevronRight className="w-4 h-4 opacity-50" />}
+                                                    <div>
+                                                        <div className="text-sm font-bold truncate">{res.title}</div>
+                                                        <div className={`text-[10px] uppercase font-bold ${selectedNoteId === res.id ? 'text-indigo-100' : 'text-gray-400'}`}>Consultar oficial</div>
+                                                    </div>
                                                 </button>
-
-                                                {isExp && (
-                                                    <div className="ml-4 mt-1 space-y-1 border-l-2 border-indigo-100 dark:border-indigo-900/30 pl-3 fade-in">
-                                                        
-                                                        {/* APUNTES */}
-                                                        <div>
-                                                            <div className="text-[9px] font-bold text-gray-400 uppercase tracking-wider p-1">Documentos</div>
-                                                            {notes.length > 0 ? notes.map(note => (
-                                                                <button 
-                                                                    key={note.id}
-                                                                    onClick={() => setSelectedNoteId(note.id)}
-                                                                    className={`w-full text-left p-2 rounded-lg text-xs flex items-center space-x-2 transition-colors ${selectedNoteId === note.id ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-500 dark:text-slate-400 hover:bg-white dark:hover:bg-slate-700'}`}
-                                                                >
-                                                                    <Icons.FileText className="w-3.5 h-3.5 shrink-0" />
-                                                                    <span className="truncate">{note.title}</span>
-                                                                </button>
-                                                            )) : (
-                                                                <div className="text-[10px] text-gray-300 italic px-2 py-1">Sin apuntes</div>
-                                                            )}
-                                                        </div>
-
-                                                        {/* EXÁMENES: 4 PARCIALES SIEMPRE */}
-                                                        <div className="mt-2">
-                                                            <div className="text-[9px] font-bold text-gray-400 uppercase tracking-wider p-1">Evaluaciones (4 Parciales)</div>
-                                                            {[1, 2, 3, 4].map(pNum => {
-                                                                const exam = exams.find(e => e.parcial === pNum);
-                                                                return (
-                                                                    <button 
-                                                                        key={pNum}
-                                                                        disabled={!exam}
-                                                                        onClick={() => exam && setSelectedNoteId(exam.id)}
-                                                                        className={`w-full text-left p-2 rounded-lg text-[11px] flex items-center justify-between transition-all ${
-                                                                            exam 
-                                                                            ? selectedNoteId === exam.id 
-                                                                                ? 'bg-rose-500 text-white font-bold' 
-                                                                                : 'text-slate-600 dark:text-slate-300 hover:bg-white dark:hover:bg-slate-700' 
-                                                                            : 'text-gray-300 dark:text-slate-600 cursor-not-allowed italic opacity-50'
-                                                                        }`}
-                                                                    >
-                                                                        <div className="flex items-center space-x-2 truncate">
-                                                                            <span className={`w-1.5 h-1.5 rounded-full ${exam ? 'bg-rose-400' : 'bg-gray-200 dark:bg-slate-700'}`}></span>
-                                                                            <span className="truncate">Parcial {pNum}</span>
-                                                                        </div>
-                                                                        {!exam ? <Icons.Lock className="w-3 h-3" /> : <span className="text-[8px] font-bold">PDF</span>}
-                                                                    </button>
-                                                                );
-                                                            })}
-                                                        </div>
-                                                    </div>
-                                                )}
+                                            ))}
+                                            <div className="mt-6 p-4 rounded-2xl bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-100 dark:border-indigo-900/40">
+                                                <h4 className="text-xs font-bold text-indigo-700 dark:text-indigo-300 mb-2 flex items-center">
+                                                    <Icons.Lightbulb className="w-4 h-4 mr-2" />
+                                                    Resumen Académico
+                                                </h4>
+                                                <ul className="text-[11px] text-indigo-600/80 dark:text-indigo-300/60 space-y-1 list-disc ml-4">
+                                                    <li>10 Semestres totales</li>
+                                                    <li>Acreditación por créditos</li>
+                                                    <li>4 Niveles de Inglés requeridos</li>
+                                                    <li>Prácticas a partir de 7mo semestre</li>
+                                                </ul>
                                             </div>
-                                        );
-                                    })
+                                        </div>
+                                    </div>
+                                )}
+
+                                {activeTab === 'recursos' && (
+                                    <div className="fade-in p-2">
+                                        <h3 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-4">Fórmulas y Guías</h3>
+                                        <div className="space-y-2">
+                                            {RECURSOS_GENERALES.filter(r => !r.id.includes('plan')).map(res => {
+                                                const TargetIcon = Icons[res.icon] || Icons.FileText;
+                                                return (
+                                                    <button 
+                                                        key={res.id}
+                                                        onClick={() => setSelectedNoteId(res.id)}
+                                                        className={`w-full text-left p-3 rounded-xl flex items-center space-x-3 transition-all ${selectedNoteId === res.id ? 'bg-indigo-600 text-white' : 'hover:bg-gray-100 dark:hover:bg-slate-800 border border-transparent dark:border-transparent'}`}
+                                                    >
+                                                        <TargetIcon className={`w-5 h-5 shrink-0 ${selectedNoteId === res.id ? 'text-white' : 'text-indigo-500'}`} />
+                                                        <span className="text-sm font-medium truncate">{res.title}</span>
+                                                    </button>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
                                 )}
                             </div>
                         </div>
@@ -960,14 +504,16 @@
                             <div className="flex flex-col h-full bg-gray-100 dark:bg-slate-950">
                                 <header className="h-16 bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700 flex items-center justify-between px-6 shrink-0">
                                     <div className="flex flex-col ml-12 md:ml-0 truncate">
-                                        <span className="text-[10px] uppercase font-bold text-gray-400">Semestre {currentSemester}</span>
+                                        <span className="text-[10px] uppercase font-bold text-gray-400">
+                                            {activeNoteData.type === 'recurso-general' ? 'Recurso General' : `Semestre ${currentSemester}`}
+                                        </span>
                                         <h2 className="text-sm font-bold text-slate-800 dark:text-white truncate">{activeNoteData.title}</h2>
                                     </div>
                                     <div className="flex items-center space-x-3">
-                                        <a href={activeNoteData.pdfUrl} target="_blank" className="px-4 py-2 bg-indigo-600 text-white text-xs font-bold rounded-xl hover:bg-indigo-700 transition-all">
+                                        <a href={activeNoteData.pdfUrl} target="_blank" className="px-4 py-2 bg-indigo-600 text-white text-xs font-bold rounded-xl hover:bg-indigo-700 transition-all shadow-md">
                                             Descargar
                                         </a>
-                                        <button onClick={() => setSelectedNoteId(null)} className="p-2 text-gray-400 hover:text-gray-600">
+                                        <button onClick={() => setSelectedNoteId(null)} className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-white transition-colors">
                                             <Icons.X className="w-5 h-5" />
                                         </button>
                                     </div>
@@ -988,17 +534,25 @@
                                     </div>
                                     <h1 className="text-3xl font-black text-slate-800 dark:text-white mb-4">Gestor de Ingeniería</h1>
                                     <p className="text-slate-500 dark:text-slate-400 leading-relaxed mb-8">
-                                        Explora las materias de los 10 semestres. Cada materia tiene su propia sección de <b>Apuntes</b> y la estructura obligatoria de <b>4 Parciales</b> para exámenes.
+                                        Selecciona una opción en el menú lateral. Ahora puedes consultar el <b>Plan de Estudios</b> oficial o acceder a la sección de <b>Fórmulas y Recursos</b> para potenciar tu estudio.
                                     </p>
                                     <div className="grid grid-cols-2 gap-4">
-                                        <div className="p-5 bg-white dark:bg-slate-800 rounded-2xl border border-gray-100 dark:border-slate-700 shadow-sm">
-                                            <span className="block text-2xl font-black text-indigo-600 uppercase">{currentSemester}</span>
-                                            <span className="text-[10px] text-gray-400 uppercase font-bold">Semestre Seleccionado</span>
-                                        </div>
-                                        <div className="p-5 bg-white dark:bg-slate-800 rounded-2xl border border-gray-100 dark:border-slate-700 shadow-sm">
-                                            <span className="block text-2xl font-black text-rose-500">{PLAN_ESTUDIOS.length}</span>
-                                            <span className="text-[10px] text-gray-400 uppercase font-bold">Materias Totales</span>
-                                        </div>
+                                        <button 
+                                            onClick={() => { setActiveTab('plan'); setSelectedNoteId('plan-estudios-global'); }}
+                                            className="p-5 bg-white dark:bg-slate-800 rounded-2xl border border-gray-100 dark:border-slate-700 shadow-sm hover:shadow-md transition-all text-left"
+                                        >
+                                            <Icons.GraduationCap className="w-6 h-6 text-indigo-600 mb-2" />
+                                            <span className="text-[10px] text-gray-400 uppercase font-bold block">Acceso Rápido</span>
+                                            <span className="block text-sm font-bold text-slate-700 dark:text-white">Plan de Estudios</span>
+                                        </button>
+                                        <button 
+                                            onClick={() => setActiveTab('recursos')}
+                                            className="p-5 bg-white dark:bg-slate-800 rounded-2xl border border-gray-100 dark:border-slate-700 shadow-sm hover:shadow-md transition-all text-left"
+                                        >
+                                            <Icons.Sigma className="w-6 h-6 text-rose-500 mb-2" />
+                                            <span className="text-[10px] text-gray-400 uppercase font-bold block">Herramientas</span>
+                                            <span className="block text-sm font-bold text-slate-700 dark:text-white">Fórmulas y Consejos</span>
+                                        </button>
                                     </div>
                                 </div>
                             </div>

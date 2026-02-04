@@ -1,0 +1,794 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plan de Estudios Interactivo - Ingeniería en Computación</title>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        #root {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .header h1 {
+            color: #2d3748;
+            font-size: 28px;
+            margin-bottom: 8px;
+        }
+
+        .header p {
+            color: #718096;
+            font-size: 14px;
+        }
+
+        .controls {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .filters {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-bottom: 16px;
+        }
+
+        .filter-btn {
+            padding: 8px 16px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            background: white;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .filter-btn:hover {
+            border-color: #667eea;
+            background: #f7fafc;
+        }
+
+        .filter-btn.active {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+
+        .search-box {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.2s;
+        }
+
+        .search-box:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .plan-container {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            overflow-x: auto;
+        }
+
+        .semesters {
+            display: flex;
+            gap: 16px;
+            min-width: max-content;
+        }
+
+        .semester {
+            flex-shrink: 0;
+            width: 280px;
+        }
+
+        .semester-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px;
+            border-radius: 8px 8px 0 0;
+            font-weight: 600;
+            text-align: center;
+            font-size: 16px;
+        }
+
+        .semester-content {
+            background: #f7fafc;
+            border: 2px solid #e2e8f0;
+            border-top: none;
+            border-radius: 0 0 8px 8px;
+            padding: 12px;
+            min-height: 200px;
+        }
+
+        .subject-card {
+            background: white;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+        }
+
+        .subject-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        .subject-card.selected {
+            border-color: #667eea;
+            border-width: 3px;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+        }
+
+        .subject-card.prerequisite {
+            border-color: #48bb78;
+            background: #f0fff4;
+        }
+
+        .subject-card.dependent {
+            border-color: #ed8936;
+            background: #fffaf0;
+        }
+
+        .subject-card.hidden {
+            opacity: 0.3;
+            pointer-events: none;
+        }
+
+        .subject-code {
+            font-weight: 700;
+            color: #2d3748;
+            font-size: 13px;
+            margin-bottom: 4px;
+        }
+
+        .subject-name {
+            color: #4a5568;
+            font-size: 12px;
+            margin-bottom: 8px;
+            line-height: 1.4;
+        }
+
+        .subject-credits {
+            display: flex;
+            gap: 8px;
+            font-size: 11px;
+            color: #718096;
+        }
+
+        .credit-badge {
+            background: #edf2f7;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: 500;
+        }
+
+        .subject-type {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+
+        .type-cb { background: #ff0000; }
+        .type-ci { background: #00ff00; }
+        .type-cs { background: #0000ff; }
+        .type-oc { background: #a52a2a; }
+        .type-ia { background: #ffa500; }
+
+        .info-panel {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            margin-top: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .info-panel h2 {
+            color: #2d3748;
+            font-size: 20px;
+            margin-bottom: 16px;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+
+        .info-item {
+            background: #f7fafc;
+            padding: 16px;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+
+        .info-label {
+            font-size: 12px;
+            color: #718096;
+            margin-bottom: 4px;
+        }
+
+        .info-value {
+            font-size: 24px;
+            font-weight: 700;
+            color: #2d3748;
+        }
+
+        .legend {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 1px solid #e2e8f0;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            color: #4a5568;
+        }
+
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 4px;
+        }
+
+        .dependencies {
+            margin-top: 16px;
+        }
+
+        .dep-section {
+            margin-bottom: 12px;
+        }
+
+        .dep-title {
+            font-weight: 600;
+            color: #2d3748;
+            font-size: 14px;
+            margin-bottom: 8px;
+        }
+
+        .dep-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .dep-tag {
+            background: #edf2f7;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            color: #4a5568;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .dep-tag:hover {
+            background: #667eea;
+            color: white;
+        }
+
+        @media (max-width: 768px) {
+            .semesters {
+                flex-direction: column;
+            }
+
+            .semester {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useMemo } = React;
+
+        // Datos del plan de estudios
+        const subjects = [
+            // Semestre I
+            { code: "CB0100-L", name: "Laboratorio de Física I", semester: 1, theory: 0, lab: 1, credits: 2, type: "CB", prereqs: [] },
+            { code: "CB0500-L", name: "Laboratorio de Química", semester: 1, theory: 0, lab: 1, credits: 2, type: "CB", prereqs: [] },
+            { code: "CB0200-T", name: "Álgebra Superior", semester: 1, theory: 4, lab: 0, credits: 8, type: "CB", prereqs: [] },
+            { code: "CB0000-T", name: "Cálculo I", semester: 1, theory: 5, lab: 0, credits: 10, type: "CB", prereqs: [] },
+            { code: "CB0100-T", name: "Física I", semester: 1, theory: 4, lab: 0, credits: 8, type: "CB", prereqs: [] },
+            { code: "CS0000-T", name: "Inglés I", semester: 1, theory: 3, lab: 0, credits: 6, type: "CS", prereqs: [] },
+            { code: "OC0000-L", name: "Laboratorio de Herramientas Computacionales", semester: 1, theory: 0, lab: 2, credits: 4, type: "OC", prereqs: [] },
+            { code: "CB0500-T", name: "Química", semester: 1, theory: 3, lab: 0, credits: 6, type: "CB", prereqs: [] },
+            { code: "OC0100-T", name: "Técnicas de Estudio", semester: 1, theory: 2, lab: 0, credits: 4, type: "OC", prereqs: [] },
+            
+            // Semestre II
+            { code: "CB0001-T", name: "Cálculo II", semester: 2, theory: 5, lab: 0, credits: 10, type: "CB", prereqs: ["CB0000-T"] },
+            { code: "CI0100-T", name: "Electrónica Analógica I", semester: 2, theory: 3, lab: 0, credits: 6, type: "CI", prereqs: ["CB0200-T"] },
+            { code: "CB0101-T", name: "Física II", semester: 2, theory: 4, lab: 0, credits: 8, type: "CB", prereqs: ["CB0100-T"] },
+            { code: "CS0001-T", name: "Inglés II", semester: 2, theory: 3, lab: 0, credits: 6, type: "CS", prereqs: ["CS0000-T"] },
+            { code: "CI0100-L", name: "Laboratorio de Electrónica Analógica I", semester: 2, theory: 0, lab: 2, credits: 4, type: "CI", prereqs: [] },
+            { code: "CB0101-L", name: "Laboratorio de Física II", semester: 2, theory: 0, lab: 1, credits: 2, type: "CB", prereqs: [] },
+            { code: "CI0000-L", name: "Laboratorio de Programación de Computadoras", semester: 2, theory: 0, lab: 2, credits: 4, type: "CI", prereqs: [] },
+            { code: "IA7000-T", name: "Lógica", semester: 2, theory: 3, lab: 0, credits: 6, type: "IA", prereqs: [] },
+            { code: "CI0000-T", name: "Programación de Computadoras", semester: 2, theory: 3, lab: 0, credits: 6, type: "CI", prereqs: ["OC0000-L"] },
+            
+            // Semestre III
+            { code: "CB0002-T", name: "Cálculo III", semester: 3, theory: 5, lab: 0, credits: 10, type: "CB", prereqs: ["CB0001-T"] },
+            { code: "CI0101-T", name: "Electrónica Analógica II", semester: 3, theory: 3, lab: 0, credits: 6, type: "CI", prereqs: ["CI0100-T"] },
+            { code: "CS0002-T", name: "Inglés III", semester: 3, theory: 3, lab: 0, credits: 6, type: "CS", prereqs: ["CS0001-T"] },
+            { code: "CI0101-L", name: "Laboratorio de Electrónica Analógica II", semester: 3, theory: 0, lab: 2, credits: 4, type: "CI", prereqs: [] },
+            { code: "CB0102-L", name: "Laboratorio de Teoría Electromagnética I", semester: 3, theory: 0, lab: 2, credits: 4, type: "CB", prereqs: [] },
+            { code: "CB0501-L", name: "Laboratorio de Termodinámica", semester: 3, theory: 0, lab: 1, credits: 2, type: "CB", prereqs: [] },
+            { code: "CB0300-T", name: "Métodos Numéricos", semester: 3, theory: 4, lab: 0, credits: 8, type: "CB", prereqs: ["CB0200-T", "CB0000-T"] },
+            { code: "CB0501-T", name: "Termodinámica", semester: 3, theory: 4, lab: 0, credits: 8, type: "CB", prereqs: ["CB0000-T"] },
+            { code: "CB0102-T", name: "Teoría Electromagnética I", semester: 3, theory: 4, lab: 0, credits: 8, type: "CB", prereqs: ["CB0101-T"] },
+            
+            // Semestre IV
+            { code: "CB0003-T", name: "Cálculo IV", semester: 4, theory: 5, lab: 0, credits: 10, type: "CB", prereqs: ["CB0002-T"] },
+            { code: "CI0200-T", name: "Circuitos Eléctricos I", semester: 4, theory: 4, lab: 0, credits: 8, type: "CI", prereqs: ["CB0200-T"] },
+            { code: "CI0300-T", name: "Electrónica Digital I", semester: 4, theory: 4, lab: 0, credits: 8, type: "CI", prereqs: ["CI0100-T"] },
+            { code: "CS0003-T", name: "Inglés IV", semester: 4, theory: 3, lab: 0, credits: 6, type: "CS", prereqs: ["CS0002-T"] },
+            { code: "CI0300-L", name: "Laboratorio de Electrónica Digital I", semester: 4, theory: 0, lab: 2, credits: 4, type: "CI", prereqs: [] },
+            { code: "CI7100-T", name: "Estructuras de Datos", semester: 4, theory: 3, lab: 0, credits: 6, type: "CI", prereqs: ["CI0000-T"] },
+            { code: "CI7101-T", name: "Ingeniería de Programación", semester: 4, theory: 4, lab: 0, credits: 8, type: "CI", prereqs: ["CI0000-T"] },
+            
+            // Semestre V
+            { code: "CB7000-T", name: "Álgebra Lineal", semester: 5, theory: 4, lab: 0, credits: 8, type: "CB", prereqs: ["CB0200-T", "CB0000-T"] },
+            { code: "CB0600-T", name: "Probabilidad y Estadística", semester: 5, theory: 4, lab: 0, credits: 8, type: "CB", prereqs: ["CB0200-T", "CB0001-T"] },
+            { code: "CI0400-T", name: "Control Analógico I", semester: 5, theory: 3, lab: 0, credits: 6, type: "CI", prereqs: ["CB0003-T"] },
+            { code: "CI0400-L", name: "Laboratorio de Control Analógico I", semester: 5, theory: 0, lab: 2, credits: 4, type: "CI", prereqs: [] },
+            { code: "IA7300-T", name: "Paradigmas de Programación", semester: 5, theory: 3, lab: 0, credits: 6, type: "IA", prereqs: ["CI7101-T"] },
+            { code: "IA7300-L", name: "Laboratorio de Paradigmas de Programación", semester: 5, theory: 0, lab: 3, credits: 6, type: "IA", prereqs: [] },
+            { code: "CI7000-T", name: "Matemáticas Discretas", semester: 5, theory: 4, lab: 0, credits: 8, type: "CI", prereqs: ["IA7000-T"] },
+            { code: "CI7102-T", name: "Análisis de Algoritmos", semester: 5, theory: 4, lab: 0, credits: 8, type: "CI", prereqs: ["CI7100-T"] },
+            
+            // Semestre VI
+            { code: "IA3100-T", name: "Comunicaciones I", semester: 6, theory: 4, lab: 0, credits: 8, type: "IA", prereqs: ["CB0003-T", "CB0102-T"] },
+            { code: "IA3100-L", name: "Laboratorio de Comunicaciones I", semester: 6, theory: 0, lab: 1, credits: 2, type: "IA", prereqs: [] },
+            { code: "CI0401-T", name: "Control Analógico II", semester: 6, theory: 3, lab: 0, credits: 6, type: "CI", prereqs: ["CI0400-T"] },
+            { code: "CI0401-L", name: "Laboratorio de Control Analógico II", semester: 6, theory: 0, lab: 2, credits: 4, type: "CI", prereqs: [] },
+            { code: "IA7200-T", name: "Graficación", semester: 6, theory: 3, lab: 0, credits: 6, type: "IA", prereqs: ["CI0000-T"] },
+            { code: "IA7200-L", name: "Laboratorio de Graficación", semester: 6, theory: 0, lab: 3, credits: 6, type: "IA", prereqs: [] },
+            { code: "OC0300-T", name: "Economía", semester: 6, theory: 3, lab: 0, credits: 6, type: "OC", prereqs: [] },
+            { code: "CI7001-T", name: "Lenguajes Formales y Autómatas", semester: 6, theory: 3, lab: 0, credits: 6, type: "CI", prereqs: ["CI7000-T"] },
+            { code: "IA7400-T", name: "Organización de Computadoras", semester: 6, theory: 3, lab: 0, credits: 6, type: "IA", prereqs: ["CI0300-T"] },
+            
+            // Semestre VII
+            { code: "IA7500-T", name: "Bases de Datos", semester: 7, theory: 4, lab: 0, credits: 8, type: "IA", prereqs: ["CI7101-T", "IA7000-T"] },
+            { code: "IA7500-L", name: "Laboratorio de Bases de Datos", semester: 7, theory: 0, lab: 2, credits: 4, type: "IA", prereqs: [] },
+            { code: "IA7100-T", name: "Compiladores", semester: 7, theory: 3, lab: 0, credits: 6, type: "IA", prereqs: ["CI7001-T"] },
+            { code: "IA7800-T", name: "Investigación de Operaciones", semester: 7, theory: 3, lab: 0, credits: 6, type: "IA", prereqs: ["CB0001-T", "CB7000-T"] },
+            { code: "IA7600-T", name: "Redes de Computadoras", semester: 7, theory: 4, lab: 0, credits: 8, type: "IA", prereqs: ["CI0000-T", "CI0300-T"] },
+            { code: "IA7600-L", name: "Laboratorio de Redes de Computadoras", semester: 7, theory: 0, lab: 3, credits: 6, type: "IA", prereqs: [] },
+            { code: "CI7002-T", name: "Teoría de la Computación", semester: 7, theory: 4, lab: 0, credits: 8, type: "CI", prereqs: ["CI7001-T"] },
+            
+            // Semestre VIII
+            { code: "OC0400-T", name: "Administración", semester: 8, theory: 3, lab: 0, credits: 6, type: "OC", prereqs: [] },
+            { code: "CS0200-T", name: "Ética Profesional", semester: 8, theory: 3, lab: 0, credits: 6, type: "CS", prereqs: [] },
+            { code: "IA3400-T", name: "Control Digital I", semester: 8, theory: 3, lab: 0, credits: 6, type: "IA", prereqs: ["CI0401-T"] },
+            { code: "IA3400-L", name: "Laboratorio de Control Digital I", semester: 8, theory: 0, lab: 1, credits: 2, type: "IA", prereqs: [] },
+            { code: "CI7300-T", name: "Modelos Probabilistas", semester: 8, theory: 3, lab: 0, credits: 6, type: "CI", prereqs: ["CB0600-T"] },
+            { code: "CI7200-T", name: "Sistemas Operativos", semester: 8, theory: 4, lab: 0, credits: 8, type: "CI", prereqs: ["CI0000-T"] },
+            { code: "CI7200-L", name: "Laboratorio de Sistemas Operativos", semester: 8, theory: 0, lab: 5, credits: 10, type: "CI", prereqs: [] },
+            
+            // Semestre IX
+            { code: "OC0200-T", name: "Contabilidad", semester: 9, theory: 3, lab: 0, credits: 6, type: "OC", prereqs: [] },
+            { code: "CS0100-T", name: "Expresión Oral y Escrita", semester: 9, theory: 4, lab: 0, credits: 8, type: "CS", prereqs: [] },
+            { code: "IA7700-T", name: "Inteligencia Artificial", semester: 9, theory: 3, lab: 0, credits: 6, type: "IA", prereqs: ["CI7000-T", "IA7300-T"] },
+            { code: "IA7700-L", name: "Laboratorio de Inteligencia Artificial", semester: 9, theory: 0, lab: 3, credits: 6, type: "IA", prereqs: [] },
+            
+            // Semestre X
+            { code: "OC0500-T", name: "Seminario de Tesis", semester: 10, theory: 4, lab: 0, credits: 8, type: "OC", prereqs: [] },
+        ];
+
+        // Mapeo de dependencias
+        const dependencyMap = {};
+        subjects.forEach(subject => {
+            dependencyMap[subject.code] = subject.prereqs;
+        });
+
+        // Función para encontrar materias dependientes
+        function getDependents(code) {
+            return subjects
+                .filter(s => s.prereqs.includes(code))
+                .map(s => s.code);
+        }
+
+        // Función recursiva para obtener todos los prerrequisitos
+        function getAllPrerequisites(code, visited = new Set()) {
+            if (visited.has(code)) return [];
+            visited.add(code);
+            
+            const subject = subjects.find(s => s.code === code);
+            if (!subject) return [];
+            
+            let allPrereqs = [...subject.prereqs];
+            subject.prereqs.forEach(prereq => {
+                allPrereqs = [...allPrereqs, ...getAllPrerequisites(prereq, visited)];
+            });
+            
+            return [...new Set(allPrereqs)];
+        }
+
+        // Función recursiva para obtener todos los dependientes
+        function getAllDependents(code, visited = new Set()) {
+            if (visited.has(code)) return [];
+            visited.add(code);
+            
+            const directDeps = getDependents(code);
+            let allDeps = [...directDeps];
+            
+            directDeps.forEach(dep => {
+                allDeps = [...allDeps, ...getAllDependents(dep, visited)];
+            });
+            
+            return [...new Set(allDeps)];
+        }
+
+        const typeColors = {
+            CB: { name: "Ciencias Básicas", color: "#ff0000" },
+            CI: { name: "Ciencias de la Ingeniería", color: "#00ff00" },
+            CS: { name: "Ciencias Sociales", color: "#0000ff" },
+            OC: { name: "Otras Complementarias", color: "#a52a2a" },
+            IA: { name: "Ingeniería Aplicada", color: "#ffa500" }
+        };
+
+        function App() {
+            const [selectedSubjects, setSelectedSubjects] = useState([]);
+            const [filterType, setFilterType] = useState("all");
+            const [searchTerm, setSearchTerm] = useState("");
+
+            const filteredSubjects = useMemo(() => {
+                return subjects.filter(subject => {
+                    const matchesType = filterType === "all" || subject.type === filterType;
+                    const matchesSearch = searchTerm === "" || 
+                        subject.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                        subject.name.toLowerCase().includes(searchTerm.toLowerCase());
+                    return matchesType && matchesSearch;
+                });
+            }, [filterType, searchTerm]);
+
+            const handleSubjectClick = (subject) => {
+                setSelectedSubjects(prev => {
+                    const isSelected = prev.some(s => s.code === subject.code);
+                    if (isSelected) {
+                        return prev.filter(s => s.code !== subject.code);
+                    } else {
+                        return [...prev, subject];
+                    }
+                });
+            };
+
+            const clearSelection = () => {
+                setSelectedSubjects([]);
+            };
+
+            // Combinar todos los prerrequisitos y dependientes de las materias seleccionadas
+            const allPrerequisites = useMemo(() => {
+                const prereqs = new Set();
+                selectedSubjects.forEach(subject => {
+                    getAllPrerequisites(subject.code).forEach(p => prereqs.add(p));
+                });
+                return Array.from(prereqs);
+            }, [selectedSubjects]);
+
+            const allDependents = useMemo(() => {
+                const deps = new Set();
+                selectedSubjects.forEach(subject => {
+                    getAllDependents(subject.code).forEach(d => deps.add(d));
+                });
+                return Array.from(deps);
+            }, [selectedSubjects]);
+
+            const prerequisites = allPrerequisites;
+            const dependents = allDependents;
+
+            const totalCredits = subjects.reduce((sum, s) => sum + s.credits, 0);
+            const typeStats = Object.keys(typeColors).map(type => ({
+                type,
+                count: subjects.filter(s => s.type === type).length,
+                credits: subjects.filter(s => s.type === type).reduce((sum, s) => sum + s.credits, 0)
+            }));
+
+            const semesterGroups = Array.from({ length: 10 }, (_, i) => i + 1);
+
+            return (
+                <div>
+                    <div className="header">
+                        <h1>Plan de Estudios - Ingeniería en Computación</h1>
+                        <p>Haz clic en las materias para seleccionarlas (puedes seleccionar múltiples). Explora sus dependencias y requisitos de manera interactiva.</p>
+                    </div>
+
+                    <div className="controls">
+                        <div className="filters">
+                            <button 
+                                className={`filter-btn ${filterType === "all" ? "active" : ""}`}
+                                onClick={() => setFilterType("all")}
+                            >
+                                Todas
+                            </button>
+                            {Object.entries(typeColors).map(([type, info]) => (
+                                <button 
+                                    key={type}
+                                    className={`filter-btn ${filterType === type ? "active" : ""}`}
+                                    onClick={() => setFilterType(type)}
+                                >
+                                    {info.name}
+                                </button>
+                            ))}
+                        </div>
+                        <input 
+                            type="text"
+                            className="search-box"
+                            placeholder="Buscar materia por código o nombre..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                        />
+                    </div>
+
+                    <div className="plan-container">
+                        <div className="semesters">
+                            {semesterGroups.map(sem => {
+                                const semesterSubjects = filteredSubjects.filter(s => s.semester === sem);
+                                
+                                return (
+                                    <div key={sem} className="semester">
+                                        <div className="semester-header">
+                                            Semestre {sem}
+                                        </div>
+                                        <div className="semester-content">
+                                            {semesterSubjects.map(subject => {
+                                                const isSelected = selectedSubjects.some(s => s.code === subject.code);
+                                                const isPrereq = prerequisites.includes(subject.code);
+                                                const isDependent = dependents.includes(subject.code);
+
+                                                return (
+                                                    <div 
+                                                        key={subject.code}
+                                                        className={`subject-card ${isSelected ? "selected" : ""} ${isPrereq ? "prerequisite" : ""} ${isDependent ? "dependent" : ""}`}
+                                                        onClick={() => handleSubjectClick(subject)}
+                                                    >
+                                                        <div className={`subject-type type-${subject.type.toLowerCase()}`}></div>
+                                                        <div className="subject-code">{subject.code}</div>
+                                                        <div className="subject-name">{subject.name}</div>
+                                                        <div className="subject-credits">
+                                                            <span className="credit-badge">T: {subject.theory}</span>
+                                                            <span className="credit-badge">P: {subject.lab}</span>
+                                                            <span className="credit-badge">C: {subject.credits}</span>
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
+
+                    <div className="info-panel">
+                        <h2>Información del Plan de Estudios</h2>
+                        <div className="info-grid">
+                            <div className="info-item">
+                                <div className="info-label">Total de Materias</div>
+                                <div className="info-value">{subjects.length}</div>
+                            </div>
+                            <div className="info-item">
+                                <div className="info-label">Total de Créditos</div>
+                                <div className="info-value">{totalCredits}</div>
+                            </div>
+                            <div className="info-item">
+                                <div className="info-label">Semestres</div>
+                                <div className="info-value">10</div>
+                            </div>
+                            <div className="info-item">
+                                <div className="info-label">Promedio por Semestre</div>
+                                <div className="info-value">{Math.round(totalCredits / 10)}</div>
+                            </div>
+                        </div>
+
+                        {selectedSubjects.length > 0 && (
+                            <div className="dependencies">
+                                <div style={{display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px"}}>
+                                    <h2>Materias Seleccionadas ({selectedSubjects.length})</h2>
+                                    <button 
+                                        onClick={clearSelection}
+                                        style={{
+                                            padding: "8px 16px",
+                                            background: "#e53e3e",
+                                            color: "white",
+                                            border: "none",
+                                            borderRadius: "6px",
+                                            cursor: "pointer",
+                                            fontWeight: "500",
+                                            fontSize: "13px"
+                                        }}
+                                    >
+                                        Limpiar Selección
+                                    </button>
+                                </div>
+
+                                <div style={{marginBottom: "20px", padding: "12px", background: "#f7fafc", borderRadius: "8px"}}>
+                                    <div style={{display: "flex", flexWrap: "wrap", gap: "8px"}}>
+                                        {selectedSubjects.map(subject => (
+                                            <div 
+                                                key={subject.code}
+                                                style={{
+                                                    background: "white",
+                                                    padding: "8px 12px",
+                                                    borderRadius: "6px",
+                                                    border: "2px solid #667eea",
+                                                    fontSize: "13px",
+                                                    fontWeight: "500"
+                                                }}
+                                            >
+                                                {subject.code} - {subject.name}
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                                
+                                {prerequisites.length > 0 && (
+                                    <div className="dep-section">
+                                        <div className="dep-title">📚 Prerrequisitos Totales ({prerequisites.length})</div>
+                                        <div className="dep-list">
+                                            {prerequisites.map(prereq => {
+                                                const prereqSubject = subjects.find(s => s.code === prereq);
+                                                const isAlsoSelected = selectedSubjects.some(s => s.code === prereq);
+                                                return (
+                                                    <div 
+                                                        key={prereq} 
+                                                        className="dep-tag"
+                                                        style={isAlsoSelected ? {background: "#667eea", color: "white"} : {}}
+                                                        onClick={() => {
+                                                            const subject = subjects.find(s => s.code === prereq);
+                                                            if (subject) handleSubjectClick(subject);
+                                                        }}
+                                                    >
+                                                        {prereq} - {prereqSubject?.name}
+                                                        {isAlsoSelected && " ✓"}
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                        <p style={{fontSize: "12px", color: "#718096", marginTop: "8px"}}>
+                                            💡 Estas son todas las materias que necesitas aprobar antes de tomar las seleccionadas
+                                        </p>
+                                    </div>
+                                )}
+
+                                {dependents.length > 0 && (
+                                    <div className="dep-section">
+                                        <div className="dep-title">🎯 Materias Desbloqueadas ({dependents.length})</div>
+                                        <div className="dep-list">
+                                            {dependents.map(dep => {
+                                                const depSubject = subjects.find(s => s.code === dep);
+                                                const isAlsoSelected = selectedSubjects.some(s => s.code === dep);
+                                                return (
+                                                    <div 
+                                                        key={dep} 
+                                                        className="dep-tag"
+                                                        style={isAlsoSelected ? {background: "#667eea", color: "white"} : {}}
+                                                        onClick={() => {
+                                                            const subject = subjects.find(s => s.code === dep);
+                                                            if (subject) handleSubjectClick(subject);
+                                                        }}
+                                                    >
+                                                        {dep} - {depSubject?.name}
+                                                        {isAlsoSelected && " ✓"}
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                        <p style={{fontSize: "12px", color: "#718096", marginTop: "8px"}}>
+                                            💡 Estas materias se desbloquean al aprobar las seleccionadas
+                                        </p>
+                                    </div>
+                                )}
+
+                                {selectedSubjects.length === 1 && (
+                                    <div className="dep-section">
+                                        <div className="dep-title">ℹ️ Detalles de la Materia</div>
+                                        <div style={{background: "#f7fafc", padding: "12px", borderRadius: "8px", fontSize: "14px"}}>
+                                            <p><strong>Código:</strong> {selectedSubjects[0].code}</p>
+                                            <p><strong>Nombre:</strong> {selectedSubjects[0].name}</p>
+                                            <p><strong>Semestre:</strong> {selectedSubjects[0].semester}</p>
+                                            <p><strong>Tipo:</strong> {typeColors[selectedSubjects[0].type].name}</p>
+                                            <p><strong>Horas Teóricas:</strong> {selectedSubjects[0].theory}</p>
+                                            <p><strong>Horas Prácticas:</strong> {selectedSubjects[0].lab}</p>
+                                            <p><strong>Créditos:</strong> {selectedSubjects[0].credits}</p>
+                                            {selectedSubjects[0].prereqs.length > 0 && (
+                                                <p><strong>Prerrequisitos Directos:</strong> {selectedSubjects[0].prereqs.join(", ")}</p>
+                                            )}
+                                        </div>
+                                    </div>
+                                )}
+
+                                {selectedSubjects.length > 1 && (
+                                    <div className="dep-section">
+                                        <div className="dep-title">📊 Resumen de Selección</div>
+                                        <div style={{background: "#f7fafc", padding: "12px", borderRadius: "8px", fontSize: "14px"}}>
+                                            <p><strong>Materias seleccionadas:</strong> {selectedSubjects.length}</p>
+                                            <p><strong>Créditos totales:</strong> {selectedSubjects.reduce((sum, s) => sum + s.credits, 0)}</p>
+                                            <p><strong>Prerrequisitos necesarios:</strong> {prerequisites.length}</p>
+                                            <p><strong>Materias que se desbloquean:</strong> {dependents.length}</p>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
+                        <div className="legend">
+                            {Object.entries(typeColors).map(([type, info]) => (
+                                <div key={type} className="legend-item">
+                                    <div className="legend-color" style={{background: info.color}}></div>
+                                    <span>{info.name}</span>
+                                </div>
+                            ))}
+                        </div>
+
+                        <div className="legend" style={{marginTop: "12px"}}>
+                            <div className="legend-item">
+                                <div className="legend-color" style={{background: "#f0fff4", border: "2px solid #48bb78"}}></div>
+                                <span>Prerrequisito</span>
+                            </div>
+                            <div className="legend-item">
+                                <div className="legend-color" style={{background: "#fffaf0", border: "2px solid #ed8936"}}></div>
+                                <span>Dependiente</span>
+                            </div>
+                            <div className="legend-item">
+                                <div className="legend-color" style={{background: "white", border: "3px solid #667eea"}}></div>
+                                <span>Seleccionada</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        ReactDOM.render(<App />, document.getElementById('root'));
+    </script>
+</body>
+</html>
